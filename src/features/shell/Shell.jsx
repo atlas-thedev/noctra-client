@@ -344,7 +344,7 @@ export default function Shell({
     <DownloadManagerProvider>
       <div className="app-shell">
         <AppNavbar
-          currentTab={navTab}
+          currentTab={currentTab}
           onSelectTab={handleSelectTab}
           onOpenSettings={() => handleOpenSettings('launcher')}
           onOpenAccountSwitcher={() => setAccountSwitcherOpen(true)}
