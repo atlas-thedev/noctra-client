@@ -19,8 +19,6 @@ import './BrowseView.css';
  * - onNotify
  * - hideInstallToast = false
  * - initialResults
- *
- * Provides category search with .browse-category-search and .browse-search-clear.
  */
 export default function BrowseView({
   initialIntent,
