@@ -373,17 +373,7 @@ export default function SettingsView({
             <p className="settings-header-desc">{currentTabObj.desc}</p>
           </div>
 
-          {onBack && (
-            <button
-              type="button"
-              className="settings-close-icon-btn"
-              onClick={onBack}
-              title="Close Settings (Esc)"
-              aria-label="Close Settings"
-            >
-              <X size={18} />
-            </button>
-          )}
+
         </header>
 
         {/* Scrollable Settings Cards Container */}

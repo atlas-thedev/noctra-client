@@ -3,19 +3,20 @@
   flex-direction: column;
   height: 100%;
   flex: 1;
-  background: var(--page, #060305);
+  background: radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
   overflow: hidden;
 }
 
 .noctra-friends-tab-bar {
-  height: 48px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  height: 58px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 24px;
   flex: none;
-  background: var(--page-elevated, #111013);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
 }
 
 .noctra-friends-brand {
@@ -38,7 +39,7 @@
   width: 1px;
   height: 20px;
   background: rgba(255, 255, 255, 0.1);
-  margin: 0 4px;
+  margin: 0 8px;
 }
 
 .noctra-friend-tab {
@@ -84,10 +85,10 @@
 
 .noctra-friend-tab-btn {
   margin-left: 6px;
-  background: #23a55a;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  padding: 6px 14px;
   color: #fff;
   font-size: 12.5px;
   font-weight: 600;
@@ -95,11 +96,19 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .noctra-friend-tab-btn:hover {
-  background: #1f9450;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.noctra-friend-tab-btn.is-active {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .noctra-friends-body {
@@ -155,12 +164,16 @@
 .noctra-add-input-wrap {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 8px 12px;
   gap: 10px;
   max-width: 620px;
+  transition: all 0.15s ease;
+}
+.noctra-add-input-wrap:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .noctra-add-input-wrap input {
@@ -169,28 +182,34 @@
   border: none;
   outline: none;
   color: #fff;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-family: var(--font-mono, monospace);
 }
 
 .noctra-btn-send-req {
-  padding: 7px 14px;
-  border-radius: 6px;
-  background: #5865f2;
-  color: #fff;
+  padding: 7px 16px;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #000000;
   font-size: 12.5px;
-  font-weight: 600;
-  border: none;
+  font-weight: 700;
+  border: 1px solid #ffffff;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .noctra-btn-send-req:hover:not(:disabled) {
-  background: #4752c4;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
 }
 
 .noctra-btn-send-req:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .noctra-friends-search-box {
@@ -199,10 +218,16 @@
   gap: 8px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  padding: 6px 12px;
-  margin-bottom: 20px;
+  border-radius: 9px;
+  padding: 8px 12px;
+  margin-bottom: 24px;
   max-width: 500px;
+  transition: all 0.15s ease;
+}
+
+.noctra-friends-search-box:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .noctra-friends-search-box input {
@@ -217,8 +242,13 @@
 .noctra-friends-search-box button {
   background: none;
   border: none;
-  color: var(--fg-muted, #80848e);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.noctra-friends-search-box button:hover {
+  color: #ffffff;
 }
 
 .noctra-list-section-title {
@@ -231,18 +261,23 @@
 }
 
 .noctra-friend-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  margin-bottom: 10px;
 }
 
 .noctra-friend-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .noctra-friend-card-info {
@@ -314,22 +349,32 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 0;
-  gap: 12px;
+  padding: 80px 0;
+  gap: 16px;
+}
+
+.noctra-empty-friends svg {
+  width: 54px;
+  height: 54px;
+  color: rgba(255, 255, 255, 0.15);
 }
 
 .noctra-empty-friends p {
-  color: var(--fg-muted, #80848e);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 13.5px;
+  font-weight: 500;
 }
 
 .noctra-request-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: 10px;
 }
 
 .noctra-req-info {
