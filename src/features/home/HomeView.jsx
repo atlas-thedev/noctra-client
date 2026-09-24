@@ -27,7 +27,6 @@ export default function HomeView({
   onOpenCluster,
   onOpenInstances,
   onOpenVersions,
-  onOpenBrowse,
   onCreateInstance,
   account,
   launcherState,

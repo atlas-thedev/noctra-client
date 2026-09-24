@@ -18,7 +18,6 @@ import Dropdown from '../../components/ui/Dropdown.jsx';
 import SettingsTab from './SettingsTab.jsx';
 import InstanceContentTab from './InstanceContentTab.jsx';
 import ScreenshotManager from './ScreenshotManager.jsx';
-import BrowseView from '../browser/BrowseView.jsx';
 import { formatPlaytime } from '../instances/playtimeStats.js';
 import { getClusterArt } from '../../data/versionsData.js';
 import './ClusterDetailView.css';
@@ -51,7 +50,6 @@ export default function ClusterDetailView({
 
   const [query, setQuery] = useState('');
   const [filtered, setFiltered] = useState(false);
-  const [browser, setBrowser] = useState(null);
   const [notice, setNotice] = useState(null);
   const noticeTimerRef = useRef(null);
 
@@ -76,8 +74,7 @@ export default function ClusterDetailView({
 
   const confirmDiscard = () => !dirty || window.confirm('Discard unsaved instance settings?');
   closeRef.current = () => {
-    if (browser) setBrowser(null);
-    else if (confirmDiscard()) onBack();
+    if (confirmDiscard()) onBack();
   };
 
   useEffect(() => {
@@ -143,12 +140,6 @@ export default function ClusterDetailView({
     screenshots: 'screenshots'
   }[tab] || '';
 
-  const browseType = {
-    mods: 'mod',
-    shaders: 'shader',
-    textures: 'resourcepack'
-  }[tab];
-
   const openFolder = async () => {
     try {
       await window.native.instance.openFolder(cluster.id, folder);
@@ -161,7 +152,6 @@ export default function ClusterDetailView({
     setTab(id);
     setQuery('');
     setFiltered(false);
-    setBrowser(null);
     if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
     setNotice(null);
   };
@@ -189,7 +179,7 @@ export default function ClusterDetailView({
       }}
     >
       <section
-        className={`instance-manager ${browser ? 'is-browsing' : ''}`}
+        className="instance-manager"
         role="dialog"
         aria-modal="true"
         aria-label={`Manage ${cluster.name || cluster.version}`}
@@ -291,103 +281,72 @@ export default function ClusterDetailView({
 
         {/* Main Content Area */}
         <main className="im-main">
-          {browser ? (
-            <div className="im-browser">
-              <BrowseView
-                key={browser}
-                fixedContentType={browser}
-                instances={[cluster]}
-                selectedCluster={cluster}
-                onSelectCluster={() => {}}
-                onBack={() => setBrowser(null)}
-                hideInstallToast={true}
-                onNotify={(title, body) => {
-                  if (/installed/i.test(title || '') || /added to/i.test(body || '')) return;
-                  showNotice(title, body);
-                }}
+          {/* Tactical Glass Toolbar */}
+          <div className="im-toolbar">
+            <label className="im-search">
+              <Search size={14} className="im-search-icon" />
+              <input
+                aria-label="Search instance content"
+                placeholder={searchPlaceholder}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
               />
+              {query && (
+                <button
+                  type="button"
+                  className="browse-search-clear"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </label>
+
+            <div className="im-toolbar-actions">
+              <button
+                className={`im-toolbar-btn ${filtered ? 'is-active' : ''}`}
+                title={tab === 'settings' ? 'Show enabled overrides only' : tab === 'mods' ? 'Show enabled mods only' : 'Sort alphabetically'}
+                aria-label={tab === 'settings' ? 'Show enabled overrides only' : tab === 'mods' ? 'Show enabled mods only' : 'Sort alphabetically'}
+                aria-pressed={filtered}
+                onClick={() => setFiltered(!filtered)}
+              >
+                <SlidersHorizontal size={16} />
+              </button>
+              <button
+                className="im-toolbar-btn"
+                title="Open folder"
+                aria-label="Open folder"
+                onClick={openFolder}
+              >
+                <FolderOpen size={16} />
+              </button>
             </div>
-          ) : (
-            <>
-              {/* Tactical Glass Toolbar */}
-              <div className="im-toolbar">
-                <label className="im-search">
-                  <Search size={14} className="im-search-icon" />
-                  <input
-                    aria-label="Search instance content"
-                    placeholder={searchPlaceholder}
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                  />
-                  {query && (
-                    <button
-                      type="button"
-                      className="browse-search-clear"
-                      onClick={() => setQuery('')}
-                      aria-label="Clear search"
-                    >
-                      <X size={13} />
-                    </button>
-                  )}
-                </label>
+          </div>
 
-                <div className="im-toolbar-actions">
-                  {browseType && (
-                    <button
-                      className="im-toolbar-btn im-browse"
-                      title="Browse compatible content"
-                      aria-label="Browse compatible content"
-                      onClick={() => setBrowser(browseType)}
-                    >
-                      <Globe2 size={16} />
-                    </button>
-                  )}
-                  <button
-                    className={`im-toolbar-btn ${filtered ? 'is-active' : ''}`}
-                    title={tab === 'settings' ? 'Show enabled overrides only' : tab === 'mods' ? 'Show enabled mods only' : 'Sort alphabetically'}
-                    aria-label={tab === 'settings' ? 'Show enabled overrides only' : tab === 'mods' ? 'Show enabled mods only' : 'Sort alphabetically'}
-                    aria-pressed={filtered}
-                    onClick={() => setFiltered(!filtered)}
-                  >
-                    <SlidersHorizontal size={16} />
-                  </button>
-                  <button
-                    className="im-toolbar-btn"
-                    title="Open folder"
-                    aria-label="Open folder"
-                    onClick={openFolder}
-                  >
-                    <FolderOpen size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Tab Hosts */}
-              {['mods', 'shaders', 'textures', 'worlds'].includes(tab) && (
-                <InstanceContentTab
-                  key={tab}
-                  cluster={cluster}
-                  type={tab}
-                  query={query}
-                  filtered={filtered}
-                  onBrowse={() => setBrowser(browseType)}
-                />
-              )}
-
-              {tab === 'screenshots' && (
-                <ScreenshotManager
-                  cluster={cluster}
-                  query={query}
-                  sortAlphabetically={filtered}
-                  social={social}
-                  account={account}
-                  onNotify={showNotice}
-                />
-              )}
-            </>
+          {/* Tab Hosts */}
+          {['mods', 'shaders', 'textures', 'worlds'].includes(tab) && (
+            <InstanceContentTab
+              key={tab}
+              cluster={cluster}
+              type={tab}
+              query={query}
+              filtered={filtered}
+            />
           )}
 
-          <div className="im-settings-host" hidden={tab !== 'settings' || !!browser}>
+          {tab === 'screenshots' && (
+            <ScreenshotManager
+              cluster={cluster}
+              query={query}
+              sortAlphabetically={filtered}
+              social={social}
+              account={account}
+              onNotify={showNotice}
+            />
+          )}
+
+          <div className="im-settings-host" hidden={tab !== 'settings'}>
             <SettingsTab
               cluster={cluster}
               onUpdateCluster={onUpdateCluster}

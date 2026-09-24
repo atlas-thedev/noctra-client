@@ -37,7 +37,7 @@ function WorldArtwork({ world }) {
   );
 }
 
-export default function InstanceContentTab({ cluster, type, query, filtered, onBrowse }) {
+export default function InstanceContentTab({ cluster, type, query, filtered }) {
   const { folder, title, noun } = config[type] || config.mods;
   const localOnly = type === 'worlds' || type === 'screenshots';
   const [rows, setRows] = useState([]);
@@ -149,7 +149,7 @@ export default function InstanceContentTab({ cluster, type, query, filtered, onB
         `Delete “${row.title}”? ${
           type === 'worlds'
             ? 'This world will be permanently deleted. Back it up first.'
-            : 'You can reinstall it from the browser.'
+            : 'You can reinstall it from Discover.'
         }`
       )
     ) return;
@@ -181,13 +181,13 @@ export default function InstanceContentTab({ cluster, type, query, filtered, onB
         {/* Upload Banner per Screen 5 */}
         <div
           className="im-upload-banner"
-          onClick={localOnly ? openFolder : onBrowse}
+          onClick={openFolder}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              localOnly ? openFolder() : onBrowse?.();
+              openFolder();
             }
           }}
         >
@@ -201,7 +201,7 @@ export default function InstanceContentTab({ cluster, type, query, filtered, onB
             <p className="im-upload-banner-subtitle">
               {localOnly
                 ? `Local ${noun} for this Minecraft instance. Click to manage in folder.`
-                : `Drag & drop files here, or browse to add ${noun}.`}
+                : `Drag & drop files here, or open the folder to add ${noun}.`}
             </p>
           </div>
         </div>
@@ -342,9 +342,9 @@ export default function InstanceContentTab({ cluster, type, query, filtered, onB
               <button
                 type="button"
                 className="im-empty-action-btn"
-                onClick={localOnly ? openFolder : onBrowse}
+                onClick={openFolder}
               >
-                {localOnly ? `Open ${folder} folder` : `Browse ${noun}`}
+                {`Open ${folder} folder`}
               </button>
             )}
           </div>

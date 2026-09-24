@@ -376,7 +376,6 @@ export default function Shell({
               onOpenCluster={handleOpenCluster}
               onOpenInstances={() => setCurrentTab('instances')}
               onOpenVersions={() => setCurrentTab('versions')}
-              onOpenBrowse={() => setCurrentTab('browse')}
               onCreateInstance={() => setCreateInstanceOpen(true)}
               account={account}
               launcherState={launcher}
@@ -453,20 +452,9 @@ export default function Shell({
           />
         )}
 
-        {currentTab === 'browse' && (
-          <BrowseView
-            initialIntent={browseIntent}
-            instances={instancesManager.instances}
-            selectedCluster={instancesManager.selected}
-            onSelectCluster={instancesManager.select}
-            onAddInstance={handleAddInstance}
-            onOpenCluster={handleOpenCluster}
-            onNotify={notify}
-          />
-        )}
-
         {currentTab === 'discover' && (
           <BrowseView
+            initialIntent={browseIntent}
             instances={instancesManager.instances}
             selectedCluster={instancesManager.selected}
             onSelectCluster={instancesManager.select}
