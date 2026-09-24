@@ -9,29 +9,41 @@ import {
   Maximize2,
   Monitor,
   RotateCcw,
-  Save,
-  Settings2
+  Save
 } from 'lucide-react';
+import Toggle from '../../components/ui/Toggle.jsx';
+import Dropdown from '../../components/ui/Dropdown.jsx';
+import './SettingsTab.css';
 
-const presets = [
+/* ============================================================
+   Instance settings — per-instance overrides.
+
+   Rebuilt around three "override models" (Display, Memory, Java),
+   each a self-contained card that can be toggled on to override
+   the launcher-wide default. Follows settings-UX best practice:
+   group related controls, use the right control for each value,
+   make the global default obvious, and keep resets one click away.
+   ============================================================ */
+
+const RES_PRESETS = [
+  ['720p', 1280, 720],
   ['1080p', 1920, 1080],
   ['1440p', 2560, 1440],
   ['4K', 3840, 2160]
 ];
 
-function Toggle({ label = 'Enabled', checked, onChange, disabled = false }) {
-  return (
-    <label className="im-toggle">
-      <span className="im-toggle-label">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-    </label>
-  );
-}
+const DISPLAY_MODES = [
+  { value: 'windowed', label: 'Windowed' },
+  { value: 'borderless', label: 'Borderless window' },
+  { value: 'fullscreen', label: 'Fullscreen' }
+];
+
+/* Search haystacks so the toolbar search box can filter sections. */
+const SECTION_TERMS = {
+  display: 'game resolution display fullscreen borderless window size aspect ratio',
+  memory: 'allocated memory ram heap gigabytes',
+  java: 'java jvm arguments runtime executable garbage collection performance flags'
+};
 
 function initialDraft(cluster, global) {
   const ov = cluster.overrides || {};
@@ -76,7 +88,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
         setSystemRam(Math.max(1, Math.floor(memory.totalGb)));
         setDraft(next);
         setBaseline(JSON.stringify(next));
-        ratio.current = next.resolution.width / next.resolution.height;
+        ratio.current = next.resolution.width / next.resolution.height || 16 / 9;
       })
       .catch((err) => {
         if (!cancelled) setError(err.message || 'Could not read settings.');
@@ -95,8 +107,8 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
     setSaved(false);
     setDraft((current) => ({ ...current, [key]: value }));
   };
-
   const resolution = (values) => change('resolution', { ...draft.resolution, ...values });
+  const memory = (values) => change('memory', { ...draft.memory, ...values });
 
   const applySize = (width, height) => {
     resolution({ width, height });
@@ -111,6 +123,28 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
       );
     }
     resolution(next);
+  };
+
+  const setDisplayMode = (mode) =>
+    resolution({ fullscreen: mode === 'fullscreen', borderless: mode === 'borderless' });
+
+  const resetAll = () => {
+    setSaved(false);
+    setDraft((cur) => ({
+      ...cur,
+      resolution: { ...cur.resolution, enabled: false },
+      memory: { ...cur.memory, enabled: false },
+      jvmEnabled: false
+    }));
+  };
+
+  const discard = () => {
+    setSaved(false);
+    try {
+      setDraft(JSON.parse(baseline));
+    } catch {
+      /* keep current draft if baseline is unreadable */
+    }
   };
 
   const save = async (event) => {
@@ -135,7 +169,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
           next.resolution.height < 240 ||
           next.resolution.height > 4320)
       ) {
-        throw new Error('Resolution must be 320–7680 pixels wide and 240–4320 pixels high.');
+        throw new Error('Resolution must be 320\u20137680 px wide and 240\u20134320 px high.');
       }
       await onUpdateCluster(cluster.id, {
         overrides: {
@@ -159,132 +193,132 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
 
   if (!draft) {
     return (
-      <div className="im-empty">
+      <div className="nis-loading">
         {error ? (
           <>
+            <AlertCircle size={18} />
             <span role="alert">{error}</span>
-            <button type="button" onClick={() => setRetry((value) => value + 1)}>
+            <button type="button" className="nis-btn nis-btn-ghost" onClick={() => setRetry((v) => v + 1)}>
               Retry
             </button>
           </>
         ) : (
-          'Loading settings…'
+          'Loading settings\u2026'
         )}
       </div>
     );
   }
 
-  const show = (text, enabled) =>
-    text.toLowerCase().includes(query.toLowerCase()) && (!enabledOnly || enabled);
+  const q = query.trim().toLowerCase();
+  const show = (id, enabled) => SECTION_TERMS[id].includes(q) && (!enabledOnly || enabled);
+
   const r = draft.resolution;
   const m = draft.memory;
+  const displayMode = r.fullscreen ? 'fullscreen' : r.borderless ? 'borderless' : 'windowed';
+  const sizeLocked = displayMode === 'fullscreen';
+  const memWarn = m.enabled && m.max > systemRam;
+  const activeOverrides = [r.enabled, m.enabled, draft.jvmEnabled].filter(Boolean).length;
+  const memPresets = [2, 4, 8, 16].filter((g) => g <= systemRam);
+  const anyVisible = show('display', r.enabled) || show('memory', m.enabled) || show('java', draft.jvmEnabled);
 
   return (
-    <form className="im-settings" onSubmit={save} noValidate>
-      <div className="im-panel im-settings-scroll">
-        {/* Warning Banner per Screen 6 */}
-        <div className="im-settings-alert-banner">
-          <div className="im-settings-alert-left">
-            <AlertTriangle size={18} className="im-settings-alert-icon" />
-            <span className="im-settings-alert-text">
-              Proceed with caution. Modifying these settings may cause game instability.
+    <form className="nis" onSubmit={save} noValidate>
+      <div className="nis-scroll">
+        {/* Caution + override scope banner */}
+        <div className="nis-banner" role="note">
+          <div className="nis-banner-left">
+            <AlertTriangle size={18} className="nis-banner-icon" />
+            <span className="nis-banner-text">
+              These overrides apply only to <strong>{cluster.name || cluster.version}</strong>. Aggressive changes may make the game unstable.
             </span>
           </div>
-          <div className="im-settings-sync-status">
+          <div className="nis-banner-status">
             <Cloud size={12} />
-            <span>Overrides: {cluster.name || cluster.version}</span>
+            <span>{activeOverrides} of 3 overriding global</span>
           </div>
         </div>
 
-        {/* Override Summary Chips */}
-        <div className="im-settings-summary" aria-label="Override summary">
-          <div className={`im-summary-chip ${r.enabled ? 'is-active' : ''}`}>
-            <Maximize2 size={14} className="im-summary-icon" />
-            <div className="im-summary-details">
-              <span className="im-summary-name">Display</span>
-              <span className="im-summary-value">
-                {r.enabled ? `${r.width} × ${r.height}` : 'Global default'}
+        {/* At-a-glance summary */}
+        <div className="nis-summary" aria-label="Override summary">
+          <div className={`nis-chip ${r.enabled ? 'is-active' : ''}`}>
+            <Maximize2 size={14} className="nis-chip-icon" />
+            <div className="nis-chip-meta">
+              <span className="nis-chip-name">Display</span>
+              <span className="nis-chip-value">
+                {r.enabled ? (sizeLocked ? 'Fullscreen' : `${r.width} \u00d7 ${r.height}`) : 'Global default'}
               </span>
             </div>
           </div>
-
-          <div className={`im-summary-chip ${m.enabled ? 'is-active' : ''}`}>
-            <Cpu size={14} className="im-summary-icon" />
-            <div className="im-summary-details">
-              <span className="im-summary-name">Memory</span>
-              <span className="im-summary-value">
-                {m.enabled ? `${m.max} GB / ${systemRam} GB` : 'Global default'}
-              </span>
+          <div className={`nis-chip ${m.enabled ? 'is-active' : ''}`}>
+            <Cpu size={14} className="nis-chip-icon" />
+            <div className="nis-chip-meta">
+              <span className="nis-chip-name">Memory</span>
+              <span className="nis-chip-value">{m.enabled ? `${m.max} GB / ${systemRam} GB` : 'Global default'}</span>
             </div>
           </div>
-
-          <div className={`im-summary-chip ${draft.jvmEnabled ? 'is-active' : ''}`}>
-            <Code2 size={14} className="im-summary-icon" />
-            <div className="im-summary-details">
-              <span className="im-summary-name">Java</span>
-              <span className="im-summary-value">
-                {draft.jvmEnabled ? 'Custom runtime' : 'Automatic'}
-              </span>
+          <div className={`nis-chip ${draft.jvmEnabled ? 'is-active' : ''}`}>
+            <Code2 size={14} className="nis-chip-icon" />
+            <div className="nis-chip-meta">
+              <span className="nis-chip-name">Java</span>
+              <span className="nis-chip-value">{draft.jvmEnabled ? 'Custom runtime' : 'Automatic'}</span>
             </div>
           </div>
         </div>
 
-        {/* Section 1: Game Resolution */}
-        {show('Game resolution fullscreen display aspect ratio', r.enabled) && (
-          <section className="im-setting-card">
-            <header className="im-setting-card-header">
-              <div className="im-setting-card-icon-title">
-                <div className={`im-setting-card-icon ${r.enabled ? 'is-active' : ''}`}>
+        {/* Section 1 — Display */}
+        {show('display', r.enabled) && (
+          <section className={`nis-card ${r.enabled ? 'is-active' : ''}`}>
+            <header className="nis-card-head">
+              <div className="nis-card-id">
+                <div className="nis-card-icon">
                   <Maximize2 size={18} />
                 </div>
                 <div>
-                  <h3 className="im-setting-card-title">Game Resolution</h3>
-                  <p className="im-setting-card-desc">
-                    Define custom launch resolution and display mode for this profile.
-                  </p>
+                  <h3 className="nis-card-title">Game Resolution</h3>
+                  <p className="nis-card-desc">Set a custom launch window size and display mode for this instance.</p>
                 </div>
               </div>
               <Toggle checked={r.enabled} onChange={(enabled) => resolution({ enabled })} />
             </header>
 
-            <fieldset className="im-setting-card-body" disabled={!r.enabled || saving}>
-              <div className="im-resolution-row">
-                <label className="im-dimension-field">
-                  <span className="im-dimension-label">W</span>
+            <fieldset className="nis-card-body" disabled={!r.enabled || saving}>
+              <div className="nis-field">
+                <span className="nis-field-label">Display mode</span>
+                <div className="nis-mode">
+                  <Dropdown value={displayMode} options={DISPLAY_MODES} onChange={setDisplayMode} disabled={!r.enabled || saving} />
+                </div>
+              </div>
+
+              <div className="nis-row">
+                <label className={`nis-dim ${sizeLocked ? 'is-off' : ''}`}>
+                  <span className="nis-dim-label">W</span>
                   <input
                     aria-label="Window width"
                     type="number"
                     min="320"
                     max="7680"
-                    required
+                    disabled={sizeLocked}
                     value={r.width}
                     onChange={(event) => changeDimension('width', event.target.value)}
                   />
                 </label>
-
-                <span className="im-dimension-multiply">×</span>
-
-                <label className="im-dimension-field">
-                  <span className="im-dimension-label">H</span>
+                <span className="nis-x">\u00d7</span>
+                <label className={`nis-dim ${sizeLocked ? 'is-off' : ''}`}>
+                  <span className="nis-dim-label">H</span>
                   <input
                     aria-label="Window height"
                     type="number"
                     min="240"
                     max="4320"
-                    required
+                    disabled={sizeLocked}
                     value={r.height}
                     onChange={(event) => changeDimension('height', event.target.value)}
                   />
                 </label>
 
-                <div className="im-resolution-toggles">
+                <div className="nis-toggle-line">
+                  <span>Lock aspect ratio</span>
                   <Toggle
-                    label="Fullscreen mode"
-                    checked={!!r.fullscreen}
-                    onChange={(fullscreen) => resolution({ fullscreen })}
-                  />
-                  <Toggle
-                    label="Lock aspect ratio"
                     checked={r.lockAspect}
                     onChange={(lockAspect) => {
                       ratio.current = Number(r.width) / Number(r.height) || 16 / 9;
@@ -295,7 +329,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
 
                 <button
                   type="button"
-                  className="im-reset-btn"
+                  className="nis-reset"
                   title="Reset to global resolution"
                   aria-label="Reset to global resolution"
                   onClick={() => applySize(globals.resolution?.width || 854, globals.resolution?.height || 480)}
@@ -304,14 +338,14 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                 </button>
               </div>
 
-              {/* Presets */}
-              <div className="im-resolution-presets">
-                <span className="im-presets-label">Presets:</span>
-                {presets.map(([label, width, height]) => (
+              <div className={`nis-presets ${sizeLocked ? 'is-off' : ''}`}>
+                <span className="nis-presets-label">Presets</span>
+                {RES_PRESETS.map(([label, width, height]) => (
                   <button
                     type="button"
                     key={label}
-                    className={`im-preset-pill ${Number(r.width) === width && Number(r.height) === height ? 'is-active' : ''}`}
+                    className={`nis-pill ${Number(r.width) === width && Number(r.height) === height ? 'is-active' : ''}`}
+                    disabled={sizeLocked}
                     onClick={() => applySize(width, height)}
                   >
                     {label}
@@ -319,7 +353,8 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                 ))}
                 <button
                   type="button"
-                  className="im-preset-pill is-native"
+                  className="nis-pill is-native"
+                  disabled={sizeLocked}
                   onClick={() =>
                     applySize(
                       Math.round(screen.width * (window.devicePixelRatio || 1)),
@@ -327,50 +362,60 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                     )
                   }
                 >
-                  <Monitor size={12} /> Match native display
+                  <Monitor size={12} /> Native display
                 </button>
               </div>
             </fieldset>
           </section>
         )}
 
-        {/* Section 2: Allocated Memory (RAM) */}
-        {show('Allocated memory RAM', m.enabled) && (
-          <section className="im-setting-card">
-            <header className="im-setting-card-header">
-              <div className="im-setting-card-icon-title">
-                <div className={`im-setting-card-icon ${m.enabled ? 'is-active' : ''}`}>
+        {/* Section 2 — Memory */}
+        {show('memory', m.enabled) && (
+          <section className={`nis-card ${m.enabled ? 'is-active' : ''}`}>
+            <header className="nis-card-head">
+              <div className="nis-card-id">
+                <div className="nis-card-icon">
                   <Cpu size={18} />
                 </div>
                 <div>
-                  <h3 className="im-setting-card-title">Allocated Memory (RAM)</h3>
-                  <p className="im-setting-card-desc">
-                    Overrides global RAM allocation for this specific Minecraft instance.
-                  </p>
+                  <h3 className="nis-card-title">Allocated Memory (RAM)</h3>
+                  <p className="nis-card-desc">Override how much RAM the JVM may use for this instance.</p>
                 </div>
               </div>
-              <Toggle checked={m.enabled} onChange={(enabled) => change('memory', { ...m, enabled })} />
+              <Toggle checked={m.enabled} onChange={(enabled) => memory({ enabled })} />
             </header>
 
-            <fieldset className="im-setting-card-body" disabled={!m.enabled || saving}>
-              <div className="im-memory-header">
-                <div className="im-memory-badge">
+            <fieldset className="nis-card-body" disabled={!m.enabled || saving}>
+              <div className="nis-mem-head">
+                <div className="nis-mem-badge">
                   <strong>{m.max} GB</strong>
-                  <span>/ {systemRam} GB Total</span>
+                  <span>of {systemRam} GB total</span>
                 </div>
-                <button
-                  type="button"
-                  className="im-reset-btn"
-                  title="Reset to recommended memory"
-                  aria-label="Reset to recommended memory"
-                  onClick={() => change('memory', { ...m, max: Math.min(globals.memory?.max || 4, systemRam) })}
-                >
-                  <RotateCcw size={14} />
-                  <span>Recommended</span>
-                </button>
+                <div className="nis-mem-quick">
+                  {memPresets.map((g) => (
+                    <button
+                      type="button"
+                      key={g}
+                      className={`nis-pill ${m.max === g ? 'is-active' : ''}`}
+                      onClick={() => memory({ max: g })}
+                    >
+                      {g} GB
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="nis-reset"
+                    title="Reset to recommended memory"
+                    aria-label="Reset to recommended memory"
+                    onClick={() => memory({ max: Math.min(globals.memory?.max || 4, systemRam) })}
+                  >
+                    <RotateCcw size={14} />
+                    <span>Recommended</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="im-memory-slider-wrap">
+              <div className="nis-slider-wrap">
                 <input
                   aria-label="Allocated memory"
                   type="range"
@@ -378,10 +423,10 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                   max={systemRam}
                   step="1"
                   value={m.max}
-                  onChange={(event) => change('memory', { ...m, max: Number(event.target.value) })}
-                  className="im-slider"
+                  onChange={(event) => memory({ max: Number(event.target.value) })}
+                  className="nis-slider"
                 />
-                <div className="im-memory-ticks">
+                <div className="nis-ticks">
                   <span>1 GB</span>
                   <span>{Math.max(2, Math.round(systemRam * 0.25))} GB</span>
                   <span>{Math.max(4, Math.round(systemRam * 0.5))} GB</span>
@@ -390,78 +435,91 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                 </div>
               </div>
 
-              {m.max > systemRam && (
-                <p className="im-caution-note">
-                  <AlertCircle size={13} /> This allocation exceeds available physical system memory.
+              {memWarn && (
+                <p className="nis-note is-warn">
+                  <AlertCircle size={13} /> This allocation exceeds your physical system memory.
                 </p>
               )}
             </fieldset>
           </section>
         )}
 
-        {/* Section 3: JVM Arguments */}
-        {show('JVM arguments Java executable performance', draft.jvmEnabled) && (
-          <section className="im-setting-card">
-            <header className="im-setting-card-header">
-              <div className="im-setting-card-icon-title">
-                <div className={`im-setting-card-icon ${draft.jvmEnabled ? 'is-active' : ''}`}>
+        {/* Section 3 — Java & JVM */}
+        {show('java', draft.jvmEnabled) && (
+          <section className={`nis-card ${draft.jvmEnabled ? 'is-active' : ''}`}>
+            <header className="nis-card-head">
+              <div className="nis-card-id">
+                <div className="nis-card-icon">
                   <Code2 size={18} />
                 </div>
                 <div>
-                  <h3 className="im-setting-card-title">JVM Arguments & Runtime</h3>
-                  <p className="im-setting-card-desc">
-                    Custom Java runtime path and execution flags for garbage collection and performance tuning.
-                  </p>
+                  <h3 className="nis-card-title">Java &amp; JVM Arguments</h3>
+                  <p className="nis-card-desc">Point to a custom Java runtime and pass launch flags for GC and performance tuning.</p>
                 </div>
               </div>
               <Toggle checked={draft.jvmEnabled} onChange={(value) => change('jvmEnabled', value)} />
             </header>
 
-            <fieldset className="im-setting-card-body" disabled={!draft.jvmEnabled || saving}>
-              <label className="im-field-group">
-                <span className="im-field-label">Java executable path</span>
+            <fieldset className="nis-card-body" disabled={!draft.jvmEnabled || saving}>
+              <label className="nis-field">
+                <span className="nis-field-label">Java executable path</span>
                 <input
-                  className="im-field-input"
+                  className="nis-input"
                   value={draft.javaPath}
                   onChange={(event) => change('javaPath', event.target.value)}
-                  placeholder="Automatically detected bundled Java"
+                  placeholder="Leave empty to use the bundled Java runtime"
                 />
               </label>
 
-              <label className="im-field-group">
-                <span className="im-field-label">Launch arguments</span>
+              <label className="nis-field">
+                <span className="nis-field-label">Launch arguments</span>
                 <textarea
-                  className="im-field-textarea"
+                  className="nis-textarea"
                   rows={2}
                   value={draft.jvmArgs}
                   onChange={(event) => change('jvmArgs', event.target.value)}
                   placeholder="-XX:+UseG1GC -XX:+ParallelRefProcEnabled"
+                  spellCheck={false}
                 />
+                <span className="nis-field-hint">Separate flags with spaces. Applies on the next launch.</span>
               </label>
             </fieldset>
           </section>
         )}
 
-        {!['Game resolution fullscreen display aspect ratio', 'Allocated memory RAM', 'JVM arguments Java executable performance'].some(
-          (text, i) => show(text, [r.enabled, m.enabled, draft.jvmEnabled][i])
-        ) && (
-          <div className="im-empty">No matching settings found.</div>
-        )}
+        {!anyVisible && <div className="nis-empty">No matching settings found.</div>}
       </div>
 
-      {/* Sticky Save Footer */}
-      <footer className="im-settings-footer">
-        <span className={`im-status-text ${error ? 'is-error' : saved ? 'is-saved' : dirty ? 'is-dirty' : ''}`} role={error ? 'alert' : 'status'}>
-          {error || (saved ? 'Changes saved. Applies on next launch.' : dirty ? 'Unsaved changes' : 'Disabled overrides inherit global defaults.')}
-        </span>
-        <button
-          type="submit"
-          className="im-save-btn"
-          disabled={saving || !dirty || (m.enabled && m.max > systemRam)}
+      {/* Sticky footer */}
+      <footer className="nis-footer">
+        <span
+          className={`nis-status ${error ? 'is-error' : saved ? 'is-saved' : dirty ? 'is-dirty' : ''}`}
+          role={error ? 'alert' : 'status'}
         >
-          {saved ? <Check size={14} /> : <Save size={14} />}
-          <span>{saving ? 'Saving…' : saved ? 'Saved' : 'Save changes'}</span>
-        </button>
+          {error ||
+            (saved
+              ? 'Changes saved \u2014 applies on next launch.'
+              : dirty
+                ? 'You have unsaved changes.'
+                : 'Disabled overrides inherit the global defaults.')}
+        </span>
+
+        <div className="nis-footer-actions">
+          {activeOverrides > 0 && (
+            <button type="button" className="nis-btn nis-btn-ghost" onClick={resetAll} disabled={saving}>
+              Reset all to global
+            </button>
+          )}
+          {dirty && (
+            <button type="button" className="nis-btn nis-btn-ghost" onClick={discard} disabled={saving}>
+              Discard
+            </button>
+          )}
+          <button type="submit" className="nis-btn nis-btn-primary" disabled={saving || !dirty || memWarn}>
+            {saved ? <Check size={15} /> : <Save size={15} />}
+            <span>{saving ? 'Saving\u2026' : saved ? 'Saved' : 'Save changes'}</span>
+          </button>
+        </div>
       </footer>
     </form>
   );

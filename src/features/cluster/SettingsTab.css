@@ -1,0 +1,624 @@
+/* ============================================================
+   Instance settings screen (SettingsTab)
+   Self-contained; nis-* = Noctra Instance Settings.
+   Reuses the shared Toggle (.toggle) and Dropdown (.dropdown).
+   ============================================================ */
+
+.im-settings-host {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+}
+
+.nis {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.nis-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- caution / scope banner ---- */
+
+.nis-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--warning-subtle);
+  background: var(--warning-subtle);
+}
+
+.nis-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nis-banner-icon {
+  color: var(--warning);
+  flex: none;
+}
+
+.nis-banner-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--fg-secondary);
+}
+
+.nis-banner-text strong {
+  color: var(--fg-primary);
+  font-weight: 650;
+}
+
+.nis-banner-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 4px 9px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- summary chips ---- */
+
+.nis-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.nis-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--component-border);
+  background: var(--component-bg);
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.nis-chip.is-active {
+  border-color: var(--brand-border);
+  background: var(--brand-subtle);
+}
+
+.nis-chip-icon {
+  color: var(--fg-muted);
+  flex: none;
+}
+
+.nis-chip.is-active .nis-chip-icon {
+  color: var(--fg-primary);
+}
+
+.nis-chip-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nis-chip-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.nis-chip-value {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- section cards ---- */
+
+.nis-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--component-border);
+  background: var(--component-bg);
+  overflow: hidden;
+  transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+
+.nis-card.is-active {
+  border-color: var(--brand-border);
+  box-shadow: var(--shadow-brand);
+}
+
+.nis-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.nis-card-id {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nis-card-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--page-elevated);
+  color: var(--fg-secondary);
+  transition: color 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+
+.nis-card.is-active .nis-card-icon {
+  color: #fff;
+  border-color: var(--brand-border);
+  background: var(--brand-gradient);
+}
+
+.nis-card-title {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--fg-primary);
+}
+
+.nis-card-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--fg-muted);
+  max-width: 52ch;
+}
+
+.nis-card-body {
+  border: none;
+  margin: 0;
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nis-card-body:disabled {
+  opacity: 0.5;
+}
+
+.nis-card-body:disabled .toggle,
+.nis-card-body:disabled .dropdown {
+  pointer-events: none;
+}
+
+/* ---- generic rows / fields ---- */
+
+.nis-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nis-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.nis-field-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--fg-secondary);
+}
+
+.nis-field-hint {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.nis-mode {
+  max-width: 260px;
+}
+
+.nis-input,
+.nis-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--page-sunken);
+  color: var(--fg-primary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.nis-textarea {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 44px;
+}
+
+.nis-input::placeholder,
+.nis-textarea::placeholder {
+  color: var(--fg-muted);
+}
+
+.nis-input:focus,
+.nis-textarea:focus {
+  border-color: var(--brand-border);
+  box-shadow: 0 0 0 3px var(--brand-subtle);
+}
+
+/* ---- resolution dimensions ---- */
+
+.nis-dim {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 10px;
+  height: 40px;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--page-sunken);
+  transition: border-color 0.15s var(--ease), opacity 0.15s var(--ease);
+}
+
+.nis-dim.is-off {
+  opacity: 0.45;
+}
+
+.nis-dim:focus-within {
+  border-color: var(--brand-border);
+}
+
+.nis-dim-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+
+.nis-dim input {
+  width: 70px;
+  background: none;
+  border: none;
+  color: var(--fg-primary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+
+.nis-x {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.nis-toggle-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  color: var(--fg-secondary);
+}
+
+/* ---- reset button ---- */
+
+.nis-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px;
+  margin-left: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--component-bg);
+  color: var(--fg-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.nis-reset:hover:not(:disabled) {
+  background: var(--component-bg-hover);
+  border-color: var(--component-border-hover);
+  color: var(--fg-primary);
+}
+
+/* ---- preset pills ---- */
+
+.nis-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nis-presets.is-off {
+  opacity: 0.45;
+}
+
+.nis-presets-label {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nis-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--component-border);
+  background: var(--component-bg);
+  color: var(--fg-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.nis-pill:hover:not(:disabled) {
+  background: var(--component-bg-hover);
+  color: var(--fg-primary);
+  border-color: var(--component-border-hover);
+}
+
+.nis-pill.is-active {
+  color: #fff;
+  border-color: var(--brand-border);
+  background: var(--brand-subtle-hover);
+}
+
+/* ---- memory ---- */
+
+.nis-mem-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nis-mem-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.nis-mem-badge strong {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+.nis-mem-badge span {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.nis-mem-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.nis-slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nis-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--page-sunken);
+  outline: none;
+  cursor: pointer;
+}
+
+.nis-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+}
+
+.nis-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--brand-2);
+  box-shadow: var(--shadow-brand);
+  cursor: pointer;
+}
+
+.nis-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--brand-2);
+  cursor: pointer;
+}
+
+.nis-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+}
+
+/* ---- notes ---- */
+
+.nis-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.nis-note.is-warn {
+  color: var(--warning);
+}
+
+/* ---- empty / loading ---- */
+
+.nis-empty,
+.nis-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 120px;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.nis-loading {
+  height: 100%;
+}
+
+/* ---- sticky footer ---- */
+
+.nis-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--component-border);
+  background: var(--surface-glass-strong);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+.nis-status {
+  font-size: 12px;
+  color: var(--fg-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nis-status.is-dirty {
+  color: var(--warning);
+}
+
+.nis-status.is-saved {
+  color: var(--success);
+}
+
+.nis-status.is-error {
+  color: var(--danger);
+}
+
+.nis-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.nis-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: filter 0.15s var(--ease), background 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.nis-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.nis-btn-primary {
+  background: var(--brand-gradient);
+  color: #fff;
+  box-shadow: var(--shadow-brand);
+}
+
+.nis-btn-primary:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.nis-btn-ghost {
+  background: transparent;
+  border-color: var(--component-border);
+  color: var(--fg-secondary);
+}
+
+.nis-btn-ghost:not(:disabled):hover {
+  background: var(--component-bg-hover);
+  color: var(--fg-primary);
+  border-color: var(--component-border-hover);
+}
+
+.nis-btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ---- focus visibility (accessibility) ---- */
+
+.nis button:focus-visible,
+.nis input:focus-visible,
+.nis textarea:focus-visible,
+.nis .dropdown-trigger:focus-visible {
+  outline: 2px solid var(--brand-border);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .nis-summary {
+    grid-template-columns: 1fr;
+  }
+}
