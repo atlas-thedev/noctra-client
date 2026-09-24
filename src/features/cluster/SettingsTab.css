@@ -783,24 +783,43 @@
 }
 
 /* ============================================================
-   Sidebar active-tab fix (compensates for a specificity clash
-   in InstanceManager.css). The generic button reset
+   Sidebar active-tab style (overrides InstanceManager.css).
+   The generic reset
    `.instance-manager button:not([class*="browse-"]):not(.btn)`
    (0,3,1) outweighs `.im-nav.active` (0,2,0), so the intended
-   white active pill never applied and left black text on a dark
-   pill. These higher-specificity rules (scoped to .im-sidebar,
-   incl. :hover) restore it. Ideally lives in InstanceManager.css.
+   active background never applied. These higher-specificity rules
+   (scoped to .im-sidebar, incl. :hover) restore a refined brand
+   tint instead of the harsh white pill, and override the forced
+   black icon color. Ideally lives in InstanceManager.css.
    ============================================================ */
 
 .instance-manager .im-sidebar button.im-nav.active,
 .instance-manager .im-sidebar button.im-nav.active:hover,
 .instance-manager .im-sidebar button.im-nav-settings.active,
 .instance-manager .im-sidebar button.im-nav-settings.active:hover {
-  background: #ffffff;
-  color: #000000;
+  background: var(--brand-subtle);
+  color: var(--brand-2);
 }
 
 .instance-manager .im-sidebar button.im-nav.active .im-nav-text,
 .instance-manager .im-sidebar button.im-nav-settings.active .im-nav-text {
-  color: #000000;
+  color: var(--brand-2);
+}
+
+.instance-manager .im-sidebar button.im-nav.active .im-nav-icon,
+.instance-manager .im-sidebar button.im-nav.active svg,
+.instance-manager .im-sidebar button.im-nav-settings.active .im-nav-icon,
+.instance-manager .im-sidebar button.im-nav-settings.active svg {
+  color: var(--brand-2) !important;
+  stroke: var(--brand-2);
+  opacity: 1;
+}
+
+/* ---- search field: no focus ring/outline (per request) ---- */
+
+.instance-manager .im-search input:focus,
+.instance-manager .im-search input:focus-visible {
+  border-color: var(--component-border);
+  box-shadow: none;
+  outline: none;
 }

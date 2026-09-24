@@ -435,7 +435,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
 
               <div className="nis-row">
                 <NisNumber label="W" min="320" max="7680" value={r.width} disabled={sizeLocked} onChange={(v) => changeDimension('width', v)} />
-                <span className="nis-x">\u00d7</span>
+                <span className="nis-x">{'\u00d7'}</span>
                 <NisNumber label="H" min="240" max="4320" value={r.height} disabled={sizeLocked} onChange={(v) => changeDimension('height', v)} />
 
                 <div className="nis-toggle-line">
