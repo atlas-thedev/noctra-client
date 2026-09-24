@@ -92,13 +92,6 @@ export default function ProjectCard({
           )}
         </div>
 
-        {/* Installed Badge if already in instance */}
-        {isInstalled && (
-          <div className="browse-card-installed-badge">
-            <Check size={11} />
-            <span>Installed</span>
-          </div>
-        )}
       </div>
 
       {/* Card Body */}
