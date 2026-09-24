@@ -82,7 +82,8 @@ const api = {
     installed: (instanceId) => ipcRenderer.invoke('mods:installed', instanceId),
     toggle: (payload) => ipcRenderer.invoke('mods:toggle', payload),
     install: (payload) => ipcRenderer.invoke('mods:install', payload),
-    remove: (payload) => ipcRenderer.invoke('mods:remove', payload)
+    remove: (payload) => ipcRenderer.invoke('mods:remove', payload),
+    onProgress: (callback) => subscribe('mods:progress', callback)
   },
   modpacks: {
     install: (payload) => ipcRenderer.invoke('modpack:install', payload),

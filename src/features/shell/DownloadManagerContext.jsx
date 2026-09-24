@@ -46,6 +46,28 @@ export function DownloadManagerProvider({ children }) {
       }));
     }
 
+    // Individual content installs (mods, shaderpacks, resourcepacks, datapacks)
+    // each emit their own mods:progress stream keyed by projectId, so every
+    // item \u2014 including dependencies pulled in during a bundle install \u2014
+    // shows up in the manager alongside modpacks.
+    if (window.native?.mods?.onProgress) {
+      unsubscribers.push(window.native.mods.onProgress((payload) => {
+        if (payload && payload.projectId) {
+          const id = `content-${payload.projectId}`;
+          const percent = payload.percent === null || payload.percent === undefined
+            ? 0
+            : payload.percent;
+          updateDownload(id, {
+            id,
+            type: payload.folder || 'mod',
+            title: payload.title || 'Content Installation',
+            percent,
+            detail: payload.detail
+          });
+        }
+      }));
+    }
+
     if (window.native?.java?.onProgress) {
       unsubscribers.push(window.native.java.onProgress((payload) => {
         if (payload) {

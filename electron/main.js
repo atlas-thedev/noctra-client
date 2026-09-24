@@ -154,7 +154,7 @@ ipcMain.handle('app:showNotification', (_event, payload = {}) => {
 });
 
 gameLauncher.init({ app, getWin: () => win }, ipcMain);
-mods.init({ app }, ipcMain);
+mods.init({ app, getWin: () => win }, ipcMain);
 authMod.init({ app, getWin: () => win }, ipcMain);
 settingsMod.init({ app }, ipcMain);
 javaMod.init({ app, getWin: () => win }, ipcMain);

@@ -9,11 +9,23 @@ const { downloadFile, writeFileAtomic } = require('./download');
  * installed state and cleanly remove mods later.
  */
 
-let deps = null; // { app }
+let deps = null; // { app, getWin }
 
 const rootDir = () => path.join(deps.app.getPath('userData'), 'minecraft');
 const instancesDir = () => path.join(rootDir(), 'instances');
 const ALLOWED_FOLDERS = new Set(['mods', 'resourcepacks', 'shaderpacks', 'datapacks']);
+
+/**
+ * Push a content-install progress event to the renderer so the shared Download
+ * Manager can surface mod / shaderpack / resourcepack / datapack downloads the
+ * same way it already surfaces modpacks, Java, and Minecraft dependencies.
+ */
+function sendProgress(payload) {
+  const win = deps?.getWin?.();
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('mods:progress', payload);
+  }
+}
 
 function resolveInside(base, ...parts) {
   const root = path.resolve(base);
@@ -156,11 +168,39 @@ function init(dependencies, ipcMain) {
       if (!['https:', 'http:'].includes(parsedUrl.protocol)) throw new Error('Unsupported download URL');
       const { dir, target } = validateDestination(instanceId, folder, filename);
       fs.mkdirSync(dir, { recursive: true });
-      await downloadFile(url, target, { retries: 3 });
+
+      const title = metadata && metadata.title ? String(metadata.title) : filename;
+      sendProgress({ projectId, folder, percent: 0, title, detail: `Starting ${title}\u2026` });
+      try {
+        await downloadFile(url, target, {
+          retries: 3,
+          onProgress: ({ percent, retrying, attempt }) => {
+            // Reserve 100% for the explicit completion event below so the
+            // Download Manager never clears the entry before the manifest is
+            // written. Unknown-size downloads report null -> keep it pending.
+            const pct = percent === null || percent === undefined
+              ? null
+              : Math.max(1, Math.min(99, Math.round(percent)));
+            sendProgress({
+              projectId,
+              folder,
+              percent: pct,
+              title,
+              detail: retrying ? `Retrying download (${attempt})\u2026` : `Downloading ${title}\u2026`
+            });
+          }
+        });
+      } catch (error) {
+        // Resolve the entry so it doesn't hang in the manager; the caller also
+        // raises a user-facing notification for the failure.
+        sendProgress({ projectId, folder, percent: 100, title, detail: 'Failed', error: true });
+        throw error;
+      }
 
       const manifest = readManifest(instanceId);
       manifest[projectId] = { filename, folder, metadata: cleanMetadata(metadata) };
       writeManifest(instanceId, manifest);
+      sendProgress({ projectId, folder, percent: 100, title, detail: 'Installed' });
       return manifest;
     }
   );
