@@ -456,7 +456,6 @@ export default function Shell({
           <BrowseView
             initialIntent={browseIntent}
             instances={instancesManager.instances}
-            selectedCluster={instancesManager.selected}
             onSelectCluster={instancesManager.select}
             onAddInstance={handleAddInstance}
             onOpenCluster={handleOpenCluster}
