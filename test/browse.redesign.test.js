@@ -13,7 +13,7 @@ try {
   esbuild = null;
 }
 
-test('Browse redesign renders tactical glass grid, filter panel, and cards', { skip: !esbuild && 'esbuild is not installed' }, () => {
+test('Browse redesign renders full-width glass grid and cards', { skip: !esbuild && 'esbuild is not installed' }, () => {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'noctra-browse-redesign-'));
   const entry = path.join(workDir, 'entry.jsx');
   const bundle = path.join(workDir, 'bundle.cjs');
@@ -95,10 +95,8 @@ process.stdout.write(browseHtml + '---SPLIT---' + settingsHtml);
   const browseHtml = parts[1];
   const settingsHtml = parts[2];
 
-  // Assert BrowseView UI elements
+  // Assert BrowseView UI elements (redesign: full-width grid, no filter sidebar)
   assert.ok(browseHtml.includes('browse-header-bar'), 'Browse header bar is rendered');
-  assert.ok(browseHtml.includes('browse-filter-panel'), 'Filter sidebar is rendered');
-  assert.ok(browseHtml.includes('browse-category-search'), 'Category search input is rendered');
   assert.ok(browseHtml.includes('Iris Shaders'), 'Project card title is rendered');
   assert.ok(browseHtml.includes('5.0M'), 'Downloads formatted in JetBrains Mono');
   assert.ok(browseHtml.includes('browse-btn-install'), 'Install button is rendered');
