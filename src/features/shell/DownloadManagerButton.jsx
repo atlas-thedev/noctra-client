@@ -3,6 +3,42 @@ import { Download, CheckCircle2, Loader2 } from 'lucide-react';
 import { useDownloadManager } from './DownloadManagerContext.jsx';
 import './DownloadManagerButton.css';
 
+function DownloadItemIcon({ dl }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (dl.iconUrl && !hasError) {
+    return (
+      <div className="dl-manager-thumb-wrap">
+        <img
+          src={dl.iconUrl}
+          alt=""
+          className="dl-manager-item-img"
+          onError={() => setHasError(true)}
+        />
+        {!dl.done ? (
+          <div className="dl-manager-thumb-badge">
+            <Loader2 size={10} className="dl-spin" />
+          </div>
+        ) : (
+          <div className="dl-manager-thumb-badge is-done">
+            <CheckCircle2 size={10} className="text-success" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="dl-manager-default-icon">
+      {dl.done ? (
+        <CheckCircle2 size={16} className="text-success" />
+      ) : (
+        <Loader2 size={16} className="dl-spin" />
+      )}
+    </div>
+  );
+}
+
 export default function DownloadManagerButton() {
   const { downloads } = useDownloadManager();
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +93,7 @@ export default function DownloadManagerButton() {
             {downloadList.map((dl) => (
               <div key={dl.id} className="dl-manager-item">
                 <div className="dl-manager-item-icon">
-                  {dl.done ? <CheckCircle2 size={16} className="text-success" /> : <Loader2 size={16} className="dl-spin" />}
+                  <DownloadItemIcon dl={dl} />
                 </div>
                 <div className="dl-manager-item-info">
                   <div className="dl-manager-item-title">{dl.title}</div>

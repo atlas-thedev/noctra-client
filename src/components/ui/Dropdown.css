@@ -145,18 +145,18 @@
 }
 
 .dropdown-option.active {
-  background: #ffffff;
-  color: #000000;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   font-weight: 600;
 }
 
 .dropdown-option.active .dropdown-option-label {
-  color: #000000;
+  color: #ffffff;
 }
 
 .dropdown-option.active svg {
-  color: #000000 !important;
-  stroke: #000000;
+  color: #ffffff !important;
+  stroke: #ffffff;
 }
 
 .dropdown-option:disabled {

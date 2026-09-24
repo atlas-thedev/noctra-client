@@ -144,6 +144,7 @@ export default function useInstaller({
       const item = {
         projectId: version.project_id,
         title: project?.title || version.name || version.project_id,
+        iconUrl: project?.icon_url || project?.icon || null,
         versionNumber: version.version_number,
         gameVersions: version.game_versions,
         loaders: version.loaders,
@@ -190,7 +191,12 @@ export default function useInstaller({
     const id = project.project_id;
     markBusy(id, true);
     try {
-      const created = await window.native.modpacks.install({ projectId: id, versionId });
+      const created = await window.native.modpacks.install({
+        projectId: id,
+        versionId,
+        title: project.title,
+        iconUrl: project.icon_url || project.icon
+      });
       if (created) {
         onAddInstance?.(created);
         if (!hideInstallToast) {
@@ -225,7 +231,7 @@ export default function useInstaller({
           metadata: {
             title: extra.title,
             description: '',
-            iconUrl: '',
+            iconUrl: extra.iconUrl || '',
             author: '',
             source: 'modrinth',
             version: extra.versionNumber,

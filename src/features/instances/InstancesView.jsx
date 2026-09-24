@@ -4,7 +4,7 @@ import { getClusterArt } from '../../data/versionsData.js';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { formatLaunchProgress } from '../launcher/useLauncher.js';
 import LaunchActionButton from '../launcher/LaunchActionButton.jsx';
-import BrowseView from '../browser/BrowseView.jsx';
+
 import './InstancesView.css';
 
 const SORTS = [
@@ -86,7 +86,7 @@ export default function InstancesView({
   const [sort, setSort] = useState('recent');
   const [loaderFilter, setLoaderFilter] = useState('All');
   const [layout, setLayout] = useState('grid');
-  const [activeSubTab, setActiveSubTab] = useState('instances');
+
 
   const [sortOpen, setSortOpen] = useState(false);
   const [menuFor, setMenuFor] = useState(null);
@@ -235,16 +235,6 @@ export default function InstancesView({
         </div>
 
         <div className="instances-header-actions">
-          <button
-            type="button"
-            className={`instances-browse-link-btn ${activeSubTab === 'browse' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab((prev) => (prev === 'browse' ? 'instances' : 'browse'))}
-            title={activeSubTab === 'browse' ? 'View Instances' : 'Browse compatible mods'}
-          >
-            <NativeIcon name="compass" size={16} />
-            <span>{activeSubTab === 'browse' ? 'View Instances' : 'Browse Mods'}</span>
-          </button>
-
           <button type="button" className="instances-brand-btn" onClick={onOpenCreateModal}>
             <NativeIcon name="plus" size={16} />
             <span>{t('instances.new')}</span>
@@ -252,42 +242,7 @@ export default function InstancesView({
         </div>
       </header>
 
-      <div className="instances-nav-tabs">
-        <button
-          type="button"
-          className={`instances-nav-tab ${activeSubTab === 'instances' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('instances')}
-        >
-          <NativeIcon name="cube" size={15} />
-          <span>{t('nav.instances')}</span>
-          <span className="instances-tab-count">{instances.length}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`instances-nav-tab ${activeSubTab === 'browse' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('browse')}
-        >
-          <NativeIcon name="compass" size={15} />
-          <span>Browse Mods</span>
-        </button>
-      </div>
-
-      {activeSubTab === 'browse' ? (
-        <div className="instances-browse-container">
-          <BrowseView
-            excludeTypes={['modpack']}
-            instances={instances}
-            selectedCluster={instances.find((i) => i.id === selectedId) || instances[0]}
-            onSelectCluster={onSelect}
-            onAddInstance={onOpenCreateModal}
-            onOpenCluster={onOpenCluster}
-            onNotify={onNotify}
-          />
-        </div>
-      ) : (
-        <>
-          {instances.length > 0 && (
+      {instances.length > 0 && (
             <div className="instances-toolbar">
           <label className="instances-search">
             <NativeIcon name="search" size={16} />
@@ -590,14 +545,12 @@ export default function InstancesView({
             })}
 
             <button type="button" className="instance-add-card" onClick={onOpenCreateModal}>
-              <NativeIcon name="plus" size={22} />
+              <NativeIcon name="plus" size={24} />
               <span>{t('instances.new')}</span>
             </button>
           </div>
         )}
       </div>
-    </>
-  )}
 
       {renaming && (
         <div className="instances-dialog-backdrop" onClick={() => setRenaming(null)}>

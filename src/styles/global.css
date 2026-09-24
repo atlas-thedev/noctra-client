@@ -299,8 +299,7 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-:root .instances-empty-icon,
-:root .instance-add-card:hover {
+:root .instances-empty-icon {
   color: var(--brand-soft);
 }
 
@@ -309,14 +308,18 @@ select {
 :root .browse-sort-popover-item.active,
 :root .browse-sort-popover-item:hover,
 :root .dropdown-option.active,
-:root .dropdown-option:hover {
+:root .dropdown-option.active .dropdown-option-label,
+:root .dropdown-option:hover,
+:root .dropdown-option:hover .dropdown-option-label {
   color: #ffffff;
 }
 
 :root .instances-popover-item.active svg,
 :root .instances-popover-item:hover svg,
 :root .browse-sort-popover-item.active svg,
-:root .browse-sort-popover-item:hover svg {
+:root .browse-sort-popover-item:hover svg,
+:root .dropdown-option.active svg,
+:root .dropdown-option:hover svg {
   color: #ffffff !important;
   stroke: #ffffff;
 }

@@ -116,9 +116,57 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--fg-secondary);
+  flex-shrink: 0;
+}
+
+.dl-manager-default-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
   height: 24px;
+}
+
+.dl-manager-thumb-wrap {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-manager-item-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: block;
+}
+
+.dl-manager-thumb-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0f1013;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
   color: var(--fg-secondary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.dl-manager-thumb-badge.is-done {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: #062319;
 }
 
 .text-success {

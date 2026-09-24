@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, ArrowUp, Blocks, CircleHelp, Download, Home, Layers3, Lock, MessageSquare, Minus, PackageOpen, Radio, RefreshCw, Settings, ShieldCheck, User, WifiOff, X } from 'lucide-react';
+import { AlertTriangle, ArrowUp, Blocks, CircleHelp, Compass, Download, Home, Layers3, Lock, MessageSquare, Minus, PackageOpen, Radio, RefreshCw, Settings, ShieldCheck, User, WifiOff, X } from 'lucide-react';
 import Logo from '../../components/ui/Logo.jsx';
 import NativeIcon from '../../components/ui/NativeIcon.jsx';
 import PlayerAvatar from '../../components/ui/PlayerAvatar.jsx';
@@ -13,7 +13,7 @@ export const CORE_NAV_ITEMS = [
   { id: 'home', labelKey: 'nav.home', icon: Home },
   { id: 'instances', labelKey: 'nav.instances', icon: Layers3 },
   { id: 'versions', labelKey: 'nav.versions', icon: Blocks },
-  { id: 'modpacks', labelKey: 'browse.modpacks', icon: PackageOpen }
+  { id: 'discover', labelKey: 'nav.discover', icon: Compass }
 ];
 
 export const PERSONAL_NAV_ITEMS = [

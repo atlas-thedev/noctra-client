@@ -13,8 +13,13 @@ export function DownloadManagerProvider({ children }) {
         return next;
       }
       
-      const isComplete = data.percent >= 100;
-      const next = { ...prev, [id]: { ...prev[id], ...data, done: isComplete } };
+      const existing = prev[id] || {};
+      const cleanData = { ...data };
+      if (!cleanData.title && existing.title) cleanData.title = existing.title;
+      if (!cleanData.iconUrl && existing.iconUrl) cleanData.iconUrl = existing.iconUrl;
+
+      const isComplete = cleanData.percent >= 100;
+      const next = { ...prev, [id]: { ...existing, ...cleanData, done: isComplete } };
       
       if (isComplete) {
         setTimeout(() => {
@@ -35,10 +40,12 @@ export function DownloadManagerProvider({ children }) {
     if (window.native?.modpacks?.onProgress) {
       unsubscribers.push(window.native.modpacks.onProgress((payload) => {
         if (payload) {
-          updateDownload(`modpack-${payload.projectId}`, {
-            id: `modpack-${payload.projectId}`,
+          const id = `modpack-${payload.projectId}`;
+          updateDownload(id, {
+            id,
             type: 'modpack',
-            title: 'Modpack Installation',
+            title: payload.title || 'Modpack Installation',
+            iconUrl: payload.iconUrl || payload.icon_url || null,
             percent: payload.percent,
             detail: payload.detail
           });
@@ -48,7 +55,7 @@ export function DownloadManagerProvider({ children }) {
 
     // Individual content installs (mods, shaderpacks, resourcepacks, datapacks)
     // each emit their own mods:progress stream keyed by projectId, so every
-    // item \u2014 including dependencies pulled in during a bundle install \u2014
+    // item — including dependencies pulled in during a bundle install —
     // shows up in the manager alongside modpacks.
     if (window.native?.mods?.onProgress) {
       unsubscribers.push(window.native.mods.onProgress((payload) => {
@@ -61,6 +68,7 @@ export function DownloadManagerProvider({ children }) {
             id,
             type: payload.folder || 'mod',
             title: payload.title || 'Content Installation',
+            iconUrl: payload.iconUrl || payload.icon_url || null,
             percent,
             detail: payload.detail
           });

@@ -21,10 +21,10 @@ let deps = null; // { app, getWin }
 const rootDir = () => path.join(deps.app.getPath('userData'), 'minecraft');
 const instanceDir = (id) => path.join(rootDir(), 'instances', id);
 
-function progress(projectId, percent, detail) {
+function progress(projectId, percent, detail, meta = {}) {
   const win = deps.getWin?.();
   if (win && !win.isDestroyed()) {
-    win.webContents.send('modpack:progress', { projectId, percent, detail });
+    win.webContents.send('modpack:progress', { projectId, percent, detail, ...meta });
   }
 }
 
@@ -54,9 +54,28 @@ function resolveInside(base, relativePath) {
   return target;
 }
 
-async function install({ projectId, versionId = null, name = null }) {
-  progress(projectId, 0, 'Fetching modpack info…');
-  const project = await fetchJson(`https://api.modrinth.com/v2/project/${projectId}`);
+async function install({ projectId, versionId = null, name = null, title = null, iconUrl = null }) {
+  let packTitle = title || name || 'Modpack Installation';
+  let packIcon = iconUrl || null;
+
+  const emit = (percent, detail, extra = {}) => {
+    progress(projectId, percent, detail, {
+      title: packTitle,
+      iconUrl: packIcon,
+      ...extra
+    });
+  };
+
+  emit(0, 'Fetching modpack info…');
+  let project;
+  try {
+    project = await fetchJson(`https://api.modrinth.com/v2/project/${projectId}`);
+    if (project?.title) packTitle = project.title;
+    if (project?.icon_url) packIcon = project.icon_url;
+  } catch (e) {
+    // If info fetch fails, proceed or throw
+  }
+
   const versions = await fetchJson(`https://api.modrinth.com/v2/project/${projectId}/version`);
   if (!versions.length) throw new Error('This modpack has no versions.');
   const version = (versionId && versions.find((v) => v.id === versionId)) ?? versions[0];
@@ -65,15 +84,15 @@ async function install({ projectId, versionId = null, name = null }) {
     version.files.find((f) => f.filename.endsWith('.mrpack'));
   if (!file) throw new Error('No .mrpack file found in the latest version.');
 
-  progress(projectId, 3, `Downloading ${project.title}…`);
+  emit(3, `Downloading ${packTitle}…`);
   const packPath = path.join(rootDir(), '.downloads', `${crypto.randomUUID()}.mrpack`);
   await downloadFile(file.url, packPath, {
     retries: 3,
     expectedHashes: file.hashes,
     onProgress: ({ percent, retrying, attempt }) => {
       const pct = percent === null ? 3 : Math.max(1, Math.round(percent * 0.03));
-      const detail = retrying ? `Retrying pack download (${attempt})…` : `Downloading ${project.title}…`;
-      progress(projectId, pct, detail);
+      const detail = retrying ? `Retrying pack download (${attempt})…` : `Downloading ${packTitle}…`;
+      emit(pct, detail);
     }
   });
 
@@ -116,13 +135,13 @@ async function install({ projectId, versionId = null, name = null }) {
         doneWeight += f.fileSize || 1;
         doneCount += 1;
         const pct = 5 + Math.round((doneWeight / totalWeight) * 85);
-        progress(projectId, pct, `Downloading content — ${doneCount}/${files.length}`);
+        emit(pct, `Downloading content — ${doneCount}/${files.length}`);
       }
     });
     await Promise.all(workers);
 
     // --- overrides (configs, options, …) ---
-    progress(projectId, 92, 'Applying pack configs…');
+    emit(92, 'Applying pack configs…');
     for (const prefix of ['overrides/', 'client-overrides/']) {
       for (const entry of zip.getEntries()) {
         if (entry.isDirectory || !entry.entryName.startsWith(prefix)) continue;
@@ -132,24 +151,25 @@ async function install({ projectId, versionId = null, name = null }) {
       }
     }
 
-    progress(projectId, 100, 'Done');
+    emit(100, 'Installed');
     return {
       id,
-      name: name?.trim() || project.title,
+      name: name?.trim() || project?.title || packTitle,
       version: mcVersion,
       loader,
       loaderVersion,
       color: '#ff4133',
-      icon: project.icon_url ?? null,
+      icon: project?.icon_url ?? packIcon ?? null,
       created: Date.now(),
       lastPlayed: null,
       pack: {
-        projectId: project.id,
+        projectId: project?.id || projectId,
         versionId: version.id,
         versionNumber: version.version_number
       }
     };
   } catch (err) {
+    emit(100, 'Failed', { error: true });
     // don't leave a half-installed instance dir behind
     fs.rmSync(dir, { recursive: true, force: true });
     throw err;

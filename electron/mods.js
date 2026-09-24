@@ -170,7 +170,10 @@ function init(dependencies, ipcMain) {
       fs.mkdirSync(dir, { recursive: true });
 
       const title = metadata && metadata.title ? String(metadata.title) : filename;
-      sendProgress({ projectId, folder, percent: 0, title, detail: `Starting ${title}\u2026` });
+      const iconUrl = metadata && (metadata.icon_url || metadata.iconUrl || metadata.icon || metadata.logo)
+        ? String(metadata.icon_url || metadata.iconUrl || metadata.icon || metadata.logo)
+        : null;
+      sendProgress({ projectId, folder, percent: 0, title, iconUrl, detail: `Starting ${title}\u2026` });
       try {
         await downloadFile(url, target, {
           retries: 3,
@@ -186,6 +189,7 @@ function init(dependencies, ipcMain) {
               folder,
               percent: pct,
               title,
+              iconUrl,
               detail: retrying ? `Retrying download (${attempt})\u2026` : `Downloading ${title}\u2026`
             });
           }
@@ -193,14 +197,14 @@ function init(dependencies, ipcMain) {
       } catch (error) {
         // Resolve the entry so it doesn't hang in the manager; the caller also
         // raises a user-facing notification for the failure.
-        sendProgress({ projectId, folder, percent: 100, title, detail: 'Failed', error: true });
+        sendProgress({ projectId, folder, percent: 100, title, iconUrl, detail: 'Failed', error: true });
         throw error;
       }
 
       const manifest = readManifest(instanceId);
       manifest[projectId] = { filename, folder, metadata: cleanMetadata(metadata) };
       writeManifest(instanceId, manifest);
-      sendProgress({ projectId, folder, percent: 100, title, detail: 'Installed' });
+      sendProgress({ projectId, folder, percent: 100, title, iconUrl, detail: 'Installed' });
       return manifest;
     }
   );

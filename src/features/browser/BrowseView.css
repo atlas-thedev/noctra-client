@@ -2236,6 +2236,12 @@
   font-weight: 600;
 }
 
+.modpack-version-custom-dropdown .dropdown-option.active .dropdown-option-label,
+.modpack-version-custom-dropdown .dropdown-option.active svg {
+  color: #ffffff !important;
+  stroke: #ffffff;
+}
+
 .modpack-version-text-input {
   width: 100%;
   height: 36px;

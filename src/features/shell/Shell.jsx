@@ -4,7 +4,7 @@ import HomeView from '../home/HomeView.jsx';
 import InstancesView from '../instances/InstancesView.jsx';
 import ClustersView from '../clusters/ClustersView.jsx';
 import BrowseView from '../browser/BrowseView.jsx';
-import ModpacksView from '../browser/ModpacksView.jsx';
+
 import ClusterDetailView from '../cluster/ClusterDetailView.jsx';
 import LockerView from '../skins/LockerView.jsx';
 import RelayPage from '../social/RelayPage.jsx';
@@ -289,8 +289,8 @@ export default function Shell({
 
   const handleNavigateBrowse = (cluster) => {
     if (cluster?.id) instancesManager.select(cluster.id);
-    setBrowseReturnTab(currentTab === 'browse' ? browseReturnTab : currentTab);
-    setCurrentTab('browse');
+    setBrowseReturnTab(currentTab === 'discover' ? browseReturnTab : currentTab);
+    setCurrentTab('discover');
   };
 
   const handleCreateInstance = (values) => {
@@ -465,14 +465,15 @@ export default function Shell({
           />
         )}
 
-        {currentTab === 'modpacks' && (
-          <ModpacksView
+        {currentTab === 'discover' && (
+          <BrowseView
             instances={instancesManager.instances}
             selectedCluster={instancesManager.selected}
             onSelectCluster={instancesManager.select}
             onAddInstance={handleAddInstance}
             onOpenCluster={handleOpenCluster}
             onNotify={notify}
+            pageTitle="Discover"
           />
         )}
 
