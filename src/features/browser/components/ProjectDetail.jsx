@@ -34,6 +34,7 @@ export default function ProjectDetail({
   project,
   activeType,
   target,
+  hasLockedTarget = false,
   isVanillaInstance,
   isInstalled,
   isBusy,
@@ -190,12 +191,12 @@ export default function ProjectDetail({
           ) : isFetching ? (
             <button type="button" className="browse-btn browse-btn-busy" disabled>
               <Loader2 size={14} className="browse-spin-icon" />
-              <span>Loading versions…</span>
+              <span>Loading versions\u2026</span>
             </button>
           ) : isBusy ? (
             <button type="button" className="browse-btn browse-btn-busy" disabled>
               <Loader2 size={14} className="browse-spin-icon" />
-              <span>Installing…</span>
+              <span>Installing\u2026</span>
             </button>
           ) : isInstalled ? (
             <button
@@ -213,7 +214,7 @@ export default function ProjectDetail({
               onClick={() => onInstall?.(project)}
             >
               <ArrowDownToLine size={15} />
-              <span>Install to {target?.name || 'Instance'}</span>
+              <span>{hasLockedTarget ? `Install to ${target?.name || 'Instance'}` : 'Install'}</span>
             </button>
           )}
 
@@ -257,7 +258,7 @@ export default function ProjectDetail({
             className="browse-btn browse-btn-ghost"
             onClick={() =>
               openExternal(
-                `https://modrinth.com/${record.project_type || 'mod'}/${record.slug || projectId}`
+                `{{https://modrinth.com/${record.project_type}} || 'mod'}/${record.slug || projectId}`
               )
             }
             title="Open project on Modrinth"
@@ -311,95 +312,4 @@ export default function ProjectDetail({
                 <h4 className="browse-sidebar-heading">Project Info</h4>
 
                 <div className="browse-sidebar-row">
-                  <span className="browse-sidebar-label">Type</span>
-                  <span className="browse-sidebar-value">
-                    {record.project_type || activeType?.id}
-                  </span>
-                </div>
-
-                <div className="browse-sidebar-row">
-                  <span className="browse-sidebar-label">Client Side</span>
-                  <span className="browse-sidebar-value">
-                    {record.client_side || 'Unknown'}
-                  </span>
-                </div>
-
-                <div className="browse-sidebar-row">
-                  <span className="browse-sidebar-label">Server Side</span>
-                  <span className="browse-sidebar-value">
-                    {record.server_side || 'Unknown'}
-                  </span>
-                </div>
-
-                {record.loaders && record.loaders.length > 0 && (
-                  <div className="browse-sidebar-row-stacked">
-                    <span className="browse-sidebar-label">Supported Loaders</span>
-                    <div className="browse-sidebar-chips">
-                      {record.loaders.map((ld) => (
-                        <span key={ld} className="browse-sidebar-chip">
-                          {ld}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {record.game_versions && record.game_versions.length > 0 && (
-                  <div className="browse-sidebar-row-stacked">
-                    <span className="browse-sidebar-label">Compatible Versions</span>
-                    <div className="browse-sidebar-chips">
-                      {record.game_versions.slice(0, 10).map((gv) => (
-                        <span key={gv} className="browse-sidebar-chip">
-                          {gv}
-                        </span>
-                      ))}
-                      {record.game_versions.length > 10 && (
-                        <span className="browse-sidebar-chip is-more">
-                          +{record.game_versions.length - 10} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </aside>
-          </div>
-        ) : (
-          <div className="browse-detail-versions-tab">
-            <VersionPicker
-              project={project}
-              versions={versions}
-              loading={loading}
-              target={target}
-              activeType={activeType}
-              isVanillaInstance={isVanillaInstance}
-              isBusy={isBusy}
-              onInstallVersion={onInstallVersion}
-              versionMatchesTarget={versionMatchesTarget}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Lightbox Modal */}
-      {lightboxImg && (
-        <div className="browse-lightbox-backdrop" onClick={() => setLightboxImg(null)}>
-          <button
-            type="button"
-            className="browse-lightbox-close"
-            onClick={() => setLightboxImg(null)}
-            aria-label="Close image preview"
-          >
-            <X size={20} />
-          </button>
-          <img
-            src={lightboxImg}
-            alt=""
-            className="browse-lightbox-img"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
+                  <span className="browse-sidebar-label">

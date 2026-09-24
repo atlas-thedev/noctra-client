@@ -1,15 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
-  ChevronDown,
   FileCode,
-  FolderOpen,
-  Globe2,
   Image,
   Layers,
   Package,
-  Plus,
   Sparkles
 } from 'lucide-react';
 import { CONTENT_TYPES, isVanilla } from '../api/modrinthApi.js';
@@ -28,31 +24,14 @@ export default function BrowseHeader({
   availableContentTypes = CONTENT_TYPES,
   contentType,
   onSelectContentType,
-  instances = [],
-  selectedCluster,
   target,
-  onSelectCluster,
   onBack,
   fixedContentType = false
 }) {
   const { t } = useI18n();
-  const [instanceMenuOpen, setInstanceMenuOpen] = useState(false);
-  const menuRef = useRef(null);
 
-  useEffect(() => {
-    const handlePointerDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setInstanceMenuOpen(false);
-      }
-    };
-    if (instanceMenuOpen) {
-      document.addEventListener('pointerdown', handlePointerDown);
-    }
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [instanceMenuOpen]);
-
-  const isTargetVanilla = isVanilla(target);
-  const isModOnVanilla = contentType?.id === 'mod' && isTargetVanilla;
+  const isTargetVanilla = target ? isVanilla(target) : false;
+  const isModOnVanilla = Boolean(target) && contentType?.id === 'mod' && isTargetVanilla;
 
   return (
     <header className="browse-header-bar">
@@ -70,62 +49,8 @@ export default function BrowseHeader({
           )}
 
           <div className="browse-title-group">
-            <h1 className="browse-title">{pageTitle || 'Browse'}</h1>
-            <span className="browse-subtitle">Modrinth Marketplace</span>
+            <h1 className="browse-title">{pageTitle || 'Discover'}</h1>
           </div>
-
-          {/* Instance Target Picker */}
-          {target && (
-            <div className="browse-target-picker" ref={menuRef}>
-              <span className="browse-target-prefix">Target:</span>
-              <button
-                type="button"
-                className={`browse-target-btn ${instanceMenuOpen ? 'is-open' : ''}`}
-                onClick={() => setInstanceMenuOpen((prev) => !prev)}
-                aria-haspopup="listbox"
-                aria-expanded={instanceMenuOpen}
-                aria-label={`Target instance: ${target.name}`}
-              >
-                <div className="browse-target-info">
-                  <span className="browse-target-name">{target.name}</span>
-                  <span className="browse-target-tag">
-                    {target.mc_version || target.version} · {target.mc_loader || target.loader || 'Vanilla'}
-                  </span>
-                </div>
-                {instances.length > 1 && <ChevronDown size={14} className="browse-target-chevron" />}
-              </button>
-
-              {instanceMenuOpen && instances.length > 1 && (
-                <ul className="browse-target-menu" role="listbox">
-                  {instances.map((inst) => {
-                    const isSelected = inst.id === target.id;
-                    const instVanilla = isVanilla(inst);
-                    return (
-                      <li
-                        key={inst.id}
-                        role="option"
-                        aria-selected={isSelected}
-                        className={`browse-target-item ${isSelected ? 'is-selected' : ''}`}
-                        onClick={() => {
-                          onSelectCluster?.(inst.id);
-                          setInstanceMenuOpen(false);
-                        }}
-                      >
-                        <div className="browse-target-item-title">{inst.name}</div>
-                        <div className="browse-target-item-meta">
-                          <span>{inst.mc_version || inst.version}</span>
-                          <span>·</span>
-                          <span className={instVanilla ? 'is-vanilla' : 'is-modded'}>
-                            {inst.mc_loader || inst.loader || 'Vanilla'}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Content Type Tabs */}
