@@ -1,7 +1,8 @@
 /* ============================================================
    Instance settings screen (SettingsTab)
-   Self-contained; nis-* = Noctra Instance Settings.
-   Reuses the shared Toggle (.toggle) and Dropdown (.dropdown).
+   Fully self-contained; nis-* = Noctra Instance Settings.
+   Every control (toggle, segmented, slider, stepper, button,
+   pill) is styled here from scratch — no shared component CSS.
    ============================================================ */
 
 .im-settings-host {
@@ -210,9 +211,94 @@
   opacity: 0.5;
 }
 
-.nis-card-body:disabled .toggle,
-.nis-card-body:disabled .dropdown {
-  pointer-events: none;
+/* ---- from-scratch toggle ---- */
+
+.nis-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.nis-toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background: var(--component-border);
+  transition: background 0.18s var(--ease);
+}
+
+.nis-toggle.is-on .nis-toggle-track {
+  background: var(--brand-gradient);
+}
+
+.nis-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s var(--ease);
+}
+
+.nis-toggle.is-on .nis-toggle-thumb {
+  transform: translateX(18px);
+}
+
+.nis-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- from-scratch segmented control ---- */
+
+.nis-seg {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--page-sunken);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.nis-seg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: calc(var(--radius) - 3px);
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+.nis-seg-item:hover:not(:disabled):not(.is-active) {
+  color: var(--fg-primary);
+}
+
+.nis-seg-item.is-active {
+  background: var(--component-bg);
+  color: var(--fg-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.nis-seg-item:disabled {
+  cursor: default;
 }
 
 /* ---- generic rows / fields ---- */
@@ -240,10 +326,6 @@
 .nis-field-hint {
   font-size: 11px;
   color: var(--fg-muted);
-}
-
-.nis-mode {
-  max-width: 260px;
 }
 
 .nis-input,
@@ -384,6 +466,7 @@
   border: 1px solid var(--component-border);
   background: var(--component-bg);
   color: var(--fg-secondary);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -402,6 +485,11 @@
   background: var(--brand-subtle-hover);
 }
 
+.nis-pill:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* ---- memory ---- */
 
 .nis-mem-head {
@@ -412,29 +500,71 @@
   flex-wrap: wrap;
 }
 
-.nis-mem-badge {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.nis-mem-badge strong {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--fg-primary);
-}
-
-.nis-mem-badge span {
-  font-size: 12px;
-  color: var(--fg-muted);
-}
-
 .nis-mem-quick {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   flex-wrap: wrap;
 }
+
+/* ---- from-scratch stepper ---- */
+
+.nis-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  padding: 0 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--page-sunken);
+}
+
+.nis-stepper.is-off {
+  opacity: 0.5;
+}
+
+.nis-stepper-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+}
+
+.nis-stepper-btn:hover:not(:disabled) {
+  background: var(--component-bg-hover);
+  color: var(--fg-primary);
+}
+
+.nis-stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.nis-stepper-value {
+  min-width: 62px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+.nis-stepper-value em {
+  margin-left: 3px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+/* ---- from-scratch slider ---- */
 
 .nis-slider-wrap {
   display: flex;
@@ -448,14 +578,33 @@
   width: 100%;
   height: 6px;
   border-radius: var(--radius-full);
-  background: var(--page-sunken);
   outline: none;
   cursor: pointer;
+  background: linear-gradient(
+    to right,
+    var(--brand-2) 0,
+    var(--brand-2) var(--nis-fill, 0%),
+    var(--page-sunken) var(--nis-fill, 0%),
+    var(--page-sunken) 100%
+  );
 }
 
 .nis-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: var(--radius-full);
+  background: transparent;
+}
+
+.nis-slider::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: transparent;
+}
+
+.nis-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--brand-2);
 }
 
 .nis-slider::-webkit-slider-thumb {
@@ -478,6 +627,11 @@
   background: #fff;
   border: 2px solid var(--brand-2);
   cursor: pointer;
+}
+
+.nis-slider:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .nis-ticks {
@@ -560,6 +714,8 @@
   flex: none;
 }
 
+/* ---- from-scratch button ---- */
+
 .nis-btn {
   display: inline-flex;
   align-items: center;
@@ -611,8 +767,7 @@
 
 .nis button:focus-visible,
 .nis input:focus-visible,
-.nis textarea:focus-visible,
-.nis .dropdown-trigger:focus-visible {
+.nis textarea:focus-visible {
   outline: 2px solid var(--brand-border);
   outline-offset: 2px;
 }

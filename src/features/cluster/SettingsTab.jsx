@@ -7,23 +7,163 @@ import {
   Code2,
   Cpu,
   Maximize2,
+  Minus,
   Monitor,
+  Plus,
   RotateCcw,
-  Save
+  Save,
+  SquareDashed,
+  Square
 } from 'lucide-react';
-import Toggle from '../../components/ui/Toggle.jsx';
-import Dropdown from '../../components/ui/Dropdown.jsx';
 import './SettingsTab.css';
 
 /* ============================================================
    Instance settings — per-instance overrides.
 
-   Rebuilt around three "override models" (Display, Memory, Java),
-   each a self-contained card that can be toggled on to override
-   the launcher-wide default. Follows settings-UX best practice:
-   group related controls, use the right control for each value,
-   make the global default obvious, and keep resets one click away.
+   Rebuilt from scratch. Every interactive control in this screen
+   is a bespoke, self-contained primitive defined in this file
+   (NisToggle, NisSegmented, NisSlider, NisStepper, NisButton,
+   NisPill, NisField) — nothing is imported from the shared UI
+   library, so the whole surface can evolve independently.
+
+   Structure follows settings-UX best practice: three "override
+   models" (Display, Memory, Java), each a card that can be toggled
+   on to override the launcher-wide default. Related controls are
+   grouped, each value uses the control best suited to it, the
+   global default stays obvious, saving is explicit, and resets
+   are always one click away.
    ============================================================ */
+
+/* ----------------------------------------------------------------
+   From-scratch UI primitives (no shared imports)
+   ---------------------------------------------------------------- */
+
+function NisToggle({ checked = false, onChange = () => {}, disabled = false, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      className={`nis-toggle ${checked ? 'is-on' : ''}`}
+      onClick={() => !disabled && onChange(!checked)}
+    >
+      <span className="nis-toggle-track" />
+      <span className="nis-toggle-thumb" />
+    </button>
+  );
+}
+
+function NisSegmented({ value, options, onChange = () => {}, disabled = false, label }) {
+  return (
+    <div className="nis-seg" role="radiogroup" aria-label={label}>
+      {options.map((opt) => {
+        const active = opt.value === value;
+        return (
+          <button
+            type="button"
+            key={opt.value}
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            className={`nis-seg-item ${active ? 'is-active' : ''}`}
+            onClick={() => onChange(opt.value)}
+          >
+            {opt.icon}
+            <span>{opt.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function NisSlider({ value, min = 0, max = 100, step = 1, onChange = () => {}, disabled = false, label }) {
+  const span = max - min;
+  const pct = span > 0 ? ((Number(value) - min) / span) * 100 : 0;
+  return (
+    <input
+      type="range"
+      className="nis-slider"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      disabled={disabled}
+      aria-label={label}
+      style={{ '--nis-fill': `${Math.max(0, Math.min(100, pct))}%` }}
+      onChange={(event) => onChange(Number(event.target.value))}
+    />
+  );
+}
+
+function NisStepper({ value, min = 1, max = 99, step = 1, onChange = () => {}, disabled = false, suffix }) {
+  const clamp = (n) => Math.max(min, Math.min(max, n));
+  return (
+    <div className={`nis-stepper ${disabled ? 'is-off' : ''}`}>
+      <button
+        type="button"
+        className="nis-stepper-btn"
+        aria-label="Decrease"
+        disabled={disabled || Number(value) <= min}
+        onClick={() => onChange(clamp(Number(value) - step))}
+      >
+        <Minus size={13} />
+      </button>
+      <span className="nis-stepper-value">
+        {value}
+        {suffix ? <em>{suffix}</em> : null}
+      </span>
+      <button
+        type="button"
+        className="nis-stepper-btn"
+        aria-label="Increase"
+        disabled={disabled || Number(value) >= max}
+        onClick={() => onChange(clamp(Number(value) + step))}
+      >
+        <Plus size={13} />
+      </button>
+    </div>
+  );
+}
+
+function NisButton({ variant = 'ghost', children, ...props }) {
+  return (
+    <button className={`nis-btn nis-btn-${variant}`} {...props}>
+      {children}
+    </button>
+  );
+}
+
+function NisPill({ active = false, children, ...props }) {
+  return (
+    <button type="button" className={`nis-pill ${active ? 'is-active' : ''}`} {...props}>
+      {children}
+    </button>
+  );
+}
+
+function NisNumber({ label, value, min, max, disabled, onChange }) {
+  return (
+    <label className={`nis-dim ${disabled ? 'is-off' : ''}`}>
+      <span className="nis-dim-label">{label}</span>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        disabled={disabled}
+        value={value}
+        aria-label={label}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+/* ----------------------------------------------------------------
+   Static config
+   ---------------------------------------------------------------- */
 
 const RES_PRESETS = [
   ['720p', 1280, 720],
@@ -33,9 +173,9 @@ const RES_PRESETS = [
 ];
 
 const DISPLAY_MODES = [
-  { value: 'windowed', label: 'Windowed' },
-  { value: 'borderless', label: 'Borderless window' },
-  { value: 'fullscreen', label: 'Fullscreen' }
+  { value: 'windowed', label: 'Windowed', icon: <Square size={13} /> },
+  { value: 'borderless', label: 'Borderless', icon: <SquareDashed size={13} /> },
+  { value: 'fullscreen', label: 'Fullscreen', icon: <Maximize2 size={13} /> }
 ];
 
 /* Search haystacks so the toolbar search box can filter sections. */
@@ -198,9 +338,9 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
           <>
             <AlertCircle size={18} />
             <span role="alert">{error}</span>
-            <button type="button" className="nis-btn nis-btn-ghost" onClick={() => setRetry((v) => v + 1)}>
+            <NisButton type="button" onClick={() => setRetry((v) => v + 1)}>
               Retry
-            </button>
+            </NisButton>
           </>
         ) : (
           'Loading settings\u2026'
@@ -278,48 +418,32 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                   <p className="nis-card-desc">Set a custom launch window size and display mode for this instance.</p>
                 </div>
               </div>
-              <Toggle checked={r.enabled} onChange={(enabled) => resolution({ enabled })} />
+              <NisToggle checked={r.enabled} onChange={(enabled) => resolution({ enabled })} label="Override display" />
             </header>
 
             <fieldset className="nis-card-body" disabled={!r.enabled || saving}>
               <div className="nis-field">
                 <span className="nis-field-label">Display mode</span>
-                <div className="nis-mode">
-                  <Dropdown value={displayMode} options={DISPLAY_MODES} onChange={setDisplayMode} disabled={!r.enabled || saving} />
-                </div>
+                <NisSegmented
+                  value={displayMode}
+                  options={DISPLAY_MODES}
+                  onChange={setDisplayMode}
+                  disabled={!r.enabled || saving}
+                  label="Display mode"
+                />
               </div>
 
               <div className="nis-row">
-                <label className={`nis-dim ${sizeLocked ? 'is-off' : ''}`}>
-                  <span className="nis-dim-label">W</span>
-                  <input
-                    aria-label="Window width"
-                    type="number"
-                    min="320"
-                    max="7680"
-                    disabled={sizeLocked}
-                    value={r.width}
-                    onChange={(event) => changeDimension('width', event.target.value)}
-                  />
-                </label>
+                <NisNumber label="W" min="320" max="7680" value={r.width} disabled={sizeLocked} onChange={(v) => changeDimension('width', v)} />
                 <span className="nis-x">\u00d7</span>
-                <label className={`nis-dim ${sizeLocked ? 'is-off' : ''}`}>
-                  <span className="nis-dim-label">H</span>
-                  <input
-                    aria-label="Window height"
-                    type="number"
-                    min="240"
-                    max="4320"
-                    disabled={sizeLocked}
-                    value={r.height}
-                    onChange={(event) => changeDimension('height', event.target.value)}
-                  />
-                </label>
+                <NisNumber label="H" min="240" max="4320" value={r.height} disabled={sizeLocked} onChange={(v) => changeDimension('height', v)} />
 
                 <div className="nis-toggle-line">
                   <span>Lock aspect ratio</span>
-                  <Toggle
+                  <NisToggle
                     checked={r.lockAspect}
+                    disabled={sizeLocked}
+                    label="Lock aspect ratio"
                     onChange={(lockAspect) => {
                       ratio.current = Number(r.width) / Number(r.height) || 16 / 9;
                       resolution({ lockAspect });
@@ -341,19 +465,16 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
               <div className={`nis-presets ${sizeLocked ? 'is-off' : ''}`}>
                 <span className="nis-presets-label">Presets</span>
                 {RES_PRESETS.map(([label, width, height]) => (
-                  <button
-                    type="button"
+                  <NisPill
                     key={label}
-                    className={`nis-pill ${Number(r.width) === width && Number(r.height) === height ? 'is-active' : ''}`}
+                    active={Number(r.width) === width && Number(r.height) === height}
                     disabled={sizeLocked}
                     onClick={() => applySize(width, height)}
                   >
                     {label}
-                  </button>
+                  </NisPill>
                 ))}
-                <button
-                  type="button"
-                  className="nis-pill is-native"
+                <NisPill
                   disabled={sizeLocked}
                   onClick={() =>
                     applySize(
@@ -363,7 +484,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                   }
                 >
                   <Monitor size={12} /> Native display
-                </button>
+                </NisPill>
               </div>
             </fieldset>
           </section>
@@ -382,25 +503,25 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                   <p className="nis-card-desc">Override how much RAM the JVM may use for this instance.</p>
                 </div>
               </div>
-              <Toggle checked={m.enabled} onChange={(enabled) => memory({ enabled })} />
+              <NisToggle checked={m.enabled} onChange={(enabled) => memory({ enabled })} label="Override memory" />
             </header>
 
             <fieldset className="nis-card-body" disabled={!m.enabled || saving}>
               <div className="nis-mem-head">
-                <div className="nis-mem-badge">
-                  <strong>{m.max} GB</strong>
-                  <span>of {systemRam} GB total</span>
-                </div>
+                <NisStepper
+                  value={m.max}
+                  min={1}
+                  max={systemRam}
+                  step={1}
+                  suffix="GB"
+                  disabled={!m.enabled || saving}
+                  onChange={(max) => memory({ max })}
+                />
                 <div className="nis-mem-quick">
                   {memPresets.map((g) => (
-                    <button
-                      type="button"
-                      key={g}
-                      className={`nis-pill ${m.max === g ? 'is-active' : ''}`}
-                      onClick={() => memory({ max: g })}
-                    >
+                    <NisPill key={g} active={m.max === g} onClick={() => memory({ max: g })}>
                       {g} GB
-                    </button>
+                    </NisPill>
                   ))}
                   <button
                     type="button"
@@ -416,16 +537,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
               </div>
 
               <div className="nis-slider-wrap">
-                <input
-                  aria-label="Allocated memory"
-                  type="range"
-                  min="1"
-                  max={systemRam}
-                  step="1"
-                  value={m.max}
-                  onChange={(event) => memory({ max: Number(event.target.value) })}
-                  className="nis-slider"
-                />
+                <NisSlider value={m.max} min={1} max={systemRam} step={1} disabled={!m.enabled || saving} label="Allocated memory" onChange={(max) => memory({ max })} />
                 <div className="nis-ticks">
                   <span>1 GB</span>
                   <span>{Math.max(2, Math.round(systemRam * 0.25))} GB</span>
@@ -457,7 +569,7 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
                   <p className="nis-card-desc">Point to a custom Java runtime and pass launch flags for GC and performance tuning.</p>
                 </div>
               </div>
-              <Toggle checked={draft.jvmEnabled} onChange={(value) => change('jvmEnabled', value)} />
+              <NisToggle checked={draft.jvmEnabled} onChange={(value) => change('jvmEnabled', value)} label="Override Java" />
             </header>
 
             <fieldset className="nis-card-body" disabled={!draft.jvmEnabled || saving}>
@@ -506,19 +618,19 @@ export default function SettingsTab({ cluster, onUpdateCluster, query = '', enab
 
         <div className="nis-footer-actions">
           {activeOverrides > 0 && (
-            <button type="button" className="nis-btn nis-btn-ghost" onClick={resetAll} disabled={saving}>
+            <NisButton type="button" onClick={resetAll} disabled={saving}>
               Reset all to global
-            </button>
+            </NisButton>
           )}
           {dirty && (
-            <button type="button" className="nis-btn nis-btn-ghost" onClick={discard} disabled={saving}>
+            <NisButton type="button" onClick={discard} disabled={saving}>
               Discard
-            </button>
+            </NisButton>
           )}
-          <button type="submit" className="nis-btn nis-btn-primary" disabled={saving || !dirty || memWarn}>
+          <NisButton variant="primary" type="submit" disabled={saving || !dirty || memWarn}>
             {saved ? <Check size={15} /> : <Save size={15} />}
             <span>{saving ? 'Saving\u2026' : saved ? 'Saved' : 'Save changes'}</span>
-          </button>
+          </NisButton>
         </div>
       </footer>
     </form>
