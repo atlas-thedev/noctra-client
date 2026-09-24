@@ -208,7 +208,7 @@ export default function AppNavbar({
               <RailButton
                 key={id}
                 icon={icon}
-                active={currentTab === id || (id === 'instances' && currentTab === 'browse')}
+                active={currentTab === id}
                 onClick={() => onSelectTab(id)}
                 label={t(labelKey)}
                 tourId={id}
