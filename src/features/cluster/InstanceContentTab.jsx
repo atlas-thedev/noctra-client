@@ -204,10 +204,6 @@ export default function InstanceContentTab({ cluster, type, query, filtered, onB
                 : `Drag & drop files here, or browse to add ${noun}.`}
             </p>
           </div>
-          <div className="im-upload-banner-cloud">
-            <Cloud size={13} className="im-cloud-icon" />
-            <span>All mods synced to Noctra Cloud</span>
-          </div>
         </div>
 
         {error && (

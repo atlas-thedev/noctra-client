@@ -249,7 +249,7 @@
   font-size: 10.5px;
   font-weight: 600;
   padding: 1px 7px;
-  border-radius: var(--radius-xs);
+  border-radius: 2px;
   text-transform: capitalize;
 }
 
@@ -260,9 +260,9 @@
 }
 
 .im-badge-loader:not(.is-vanilla) {
-  background: var(--brand-subtle);
-  color: var(--brand);
-  border: 1px solid var(--brand-border);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .im-identity-stats {
@@ -338,23 +338,16 @@
 }
 
 .im-nav.active {
-  color: #ffffff;
-  background: var(--brand-subtle);
+  color: #000000;
+  background: #ffffff;
 }
 
 .im-nav.active .im-nav-text {
-  color: #ffffff;
+  color: #000000;
 }
 
 .im-nav.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: var(--radius-xs);
-  background: var(--brand);
+  display: none;
 }
 
 .im-nav-icon {
@@ -365,8 +358,8 @@
 .im-nav.active .im-nav-icon,
 .im-nav.active svg {
   opacity: 1;
-  color: #ffffff !important;
-  stroke: #ffffff;
+  color: #000000 !important;
+  stroke: #000000;
 }
 
 .im-nav-text {
@@ -575,11 +568,11 @@
   height: 42px;
   flex-shrink: 0;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background-image: linear-gradient(135deg, var(--brand) 0%, var(--brand-glow) 100%);
-  color: #ffffff;
+  border: 1px solid #ffffff;
+  background: #ffffff;
+  color: #000000;
   cursor: pointer;
-  box-shadow: 0 4px 14px -3px var(--brand-glow);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.15s var(--ease);
   padding: 0;
   line-height: 0;
@@ -588,8 +581,8 @@
 .instance-manager button.im-add,
 .instance-manager button.sm-add {
   padding: 0;
-  color: #ffffff;
-  background-image: linear-gradient(135deg, var(--brand) 0%, var(--brand-glow) 100%);
+  color: #000000;
+  background: #ffffff;
   line-height: 0;
 }
 
@@ -597,18 +590,18 @@
 .sm-add:hover,
 .instance-manager button.im-add:hover,
 .instance-manager button.sm-add:hover {
-  filter: brightness(1.12);
+  background: rgba(255, 255, 255, 0.88);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px -2px var(--brand-glow);
-  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  color: #000000;
 }
 
 .im-add svg,
 .sm-add svg {
   display: block;
   margin: 0;
-  color: #ffffff;
-  stroke: #ffffff;
+  color: #000000;
+  stroke: #000000;
 }
 
 .im-heading-actions {
@@ -1004,23 +997,26 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: var(--radius);
-  border: 1px solid var(--component-border);
-  background: var(--component-bg);
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   transition: all 0.14s var(--ease);
 }
 
 .im-summary-chip.is-active {
-  border-color: var(--brand-border);
-  background: var(--brand-subtle);
+  border-color: #ffffff;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .im-summary-icon {
   color: var(--fg-muted);
 }
 
-.im-summary-chip.is-active .im-summary-icon {
-  color: var(--brand);
+.im-summary-chip.is-active .im-summary-icon,
+.im-summary-chip.is-active .im-summary-name,
+.im-summary-chip.is-active .im-summary-value {
+  color: #000000;
 }
 
 .im-summary-details {
@@ -1047,10 +1043,16 @@
 .im-setting-card {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--component-border);
-  background: var(--component-bg);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  transition: all 0.18s ease;
+}
+.im-setting-card:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .im-setting-card-header {
@@ -1058,8 +1060,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid var(--hairline);
-  background: color-mix(in srgb, var(--page-sunken) 50%, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 .im-setting-card-icon-title {
@@ -1071,18 +1073,19 @@
 .im-setting-card-icon {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
-  background: var(--page-sunken);
-  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
   place-items: center;
-  color: var(--fg-muted);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .im-setting-card-icon.is-active {
-  color: var(--brand);
-  background: var(--brand-subtle);
-  border-color: var(--brand-border);
+  color: #000000;
+  background: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .im-setting-card-title {
@@ -1126,9 +1129,13 @@
   gap: 6px;
   height: 34px;
   padding: 0 8px 0 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--component-border);
-  background: var(--page-sunken);
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.45);
+  transition: all 0.15s ease;
+}
+.im-dimension-field:focus-within {
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .im-dimension-label {
@@ -1199,9 +1206,9 @@
   height: 26px;
   padding: 0 10px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--component-border);
-  background: var(--page-sunken);
-  color: var(--fg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -1209,20 +1216,21 @@
 }
 
 .im-preset-pill:hover {
-  color: #ffffff;
-  border-color: var(--component-border-hover);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .im-preset-pill.is-active {
-  border-color: var(--brand);
-  background: var(--brand-subtle);
-  color: #ffffff;
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .im-preset-pill.is-active svg,
 .im-preset-pill:hover svg {
-  color: #ffffff !important;
-  stroke: #ffffff;
+  color: #000000 !important;
+  stroke: #000000;
 }
 
 .im-preset-pill.is-native {
@@ -1278,8 +1286,8 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--brand);
-  box-shadow: 0 0 10px var(--brand-glow);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.12s var(--ease-spring);
 }
@@ -1322,19 +1330,19 @@
 .im-field-textarea {
   width: 100%;
   padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--component-border);
-  background: var(--page-sunken);
-  color: var(--fg-primary);
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
   font-family: var(--font-mono);
   font-size: 12px;
   outline: none;
-  transition: border-color 0.14s var(--ease);
+  transition: all 0.15s ease;
 }
 
 .im-field-input:focus,
 .im-field-textarea:focus {
-  border-color: var(--brand);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .im-field-textarea {
@@ -1376,17 +1384,21 @@
   gap: 6px;
   height: 34px;
   padding: 0 16px;
-  border-radius: var(--radius-sm);
-  background: var(--brand);
-  color: var(--fg-on-brand);
+  border-radius: 9px;
+  background: #ffffff;
+  color: #000000;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 700;
+  border: 1px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: all 0.14s var(--ease);
+  transition: all 0.15s ease;
 }
 
 .im-save-btn:hover:not(:disabled) {
-  background: var(--brand-hover);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
 }
 
 /* ============================================================
@@ -1409,7 +1421,7 @@
 .im-toggle input[type='checkbox'] {
   width: 15px;
   height: 15px;
-  accent-color: var(--brand);
+  accent-color: #ffffff;
   cursor: pointer;
 }
 
