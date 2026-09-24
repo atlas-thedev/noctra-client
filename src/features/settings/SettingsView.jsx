@@ -35,7 +35,7 @@ const TABS = [
   {
     id: 'launcher',
     title: 'General & Launcher',
-    desc: 'Language, behavior & updates',
+    desc: 'Behavior & updates',
     icon: SettingsIcon,
     group: 'Client'
   },
@@ -307,17 +307,6 @@ export default function SettingsView({
         <div className="settings-sidebar-top">
           <div className="settings-sidebar-brand">
             <span className="settings-sidebar-kicker">Preferences</span>
-            {onBack && (
-              <button
-                type="button"
-                className="settings-back-btn"
-                onClick={onBack}
-                title="Back to launcher"
-              >
-                <ArrowLeft size={13} />
-                <span>Back</span>
-              </button>
-            )}
           </div>
 
           <div className="settings-search-box">
@@ -402,39 +391,6 @@ export default function SettingsView({
           {/* ════ TAB: LAUNCHER & GENERAL ════ */}
           {activeTab === 'launcher' && (
             <>
-              {/* Interface Language */}
-              <div className="settings-section-block">
-                <div className="settings-section-title-wrap">
-                  <span className="settings-section-title">Interface & Language</span>
-                  <div className="settings-section-line" />
-                </div>
-                <div className="settings-cards-stack">
-                  <div className="noctra-setting-card">
-                    <div className="setting-card-left">
-                      <div className="setting-card-icon-wrap">
-                        <Globe size={18} />
-                      </div>
-                      <div className="setting-card-text">
-                        <span className="setting-card-name">{t('settings.interfaceLanguage')}</span>
-                        <span className="setting-card-desc">
-                          {t('settings.interfaceLanguageDesc')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="setting-card-control">
-                      <Dropdown
-                        className="settings-language-dropdown"
-                        value={locale}
-                        options={SUPPORTED_LOCALES.map((code) => ({
-                          value: code,
-                          label: LANGUAGE_NAMES[code] || code
-                        }))}
-                        onChange={(next) => changeLanguage(next)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Behavior & Features */}
               <div className="settings-section-block">

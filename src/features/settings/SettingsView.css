@@ -105,7 +105,6 @@
 .settings-search-input:focus {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
 }
 
 .settings-search-input::placeholder {
@@ -170,7 +169,6 @@
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
 .settings-nav-icon-wrap {
@@ -195,7 +193,6 @@
   background: #ffffff;
   color: #000000;
   border-color: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
 }
 
 .settings-nav-text {
@@ -363,6 +360,7 @@
 /* ── Modern Setting Card ─────────────────────────────────── */
 
 .noctra-setting-card {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -372,14 +370,17 @@
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transition: all 0.18s ease;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .noctra-setting-card:hover {
   background: rgba(255, 255, 255, 0.045);
   border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  transform: translateY(-1px);
+}
+
+.noctra-setting-card:has(.dropdown.is-open),
+.settings-section-block:has(.dropdown.is-open) {
+  z-index: 1000;
 }
 
 .noctra-setting-card.is-vertical {
@@ -475,15 +476,14 @@
 }
 
 .noctra-switch input:checked + .noctra-switch-track {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.15);
 }
 
 .noctra-switch input:checked + .noctra-switch-track .noctra-switch-thumb {
   transform: translateX(22px);
   background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* ── RAM Memory Widget ───────────────────────────────────── */
@@ -521,7 +521,7 @@
   border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   border: 2px solid #000000;
   transition: transform 0.12s ease;
 }
@@ -544,7 +544,6 @@
   font-family: var(--font-mono, monospace);
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.06);
 }
 
 .ram-presets-row {
@@ -578,7 +577,6 @@
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.35);
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 /* ── Resolution Selector ─────────────────────────────────── */
@@ -614,7 +612,6 @@
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(255, 255, 255, 0.35);
   color: #ffffff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
 }
 
 .resolution-label {
@@ -653,7 +650,6 @@
 
 .noctra-code-input:focus {
   border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
 }
 
 .noctra-btn-secondary {
@@ -693,12 +689,12 @@
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
-  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .noctra-btn-primary:hover {
   background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   transform: translateY(-1px);
 }
 
@@ -730,7 +726,6 @@
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.1);
 }
 
 .about-hero-titles h3 {
