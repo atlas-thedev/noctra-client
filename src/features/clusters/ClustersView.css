@@ -1,0 +1,587 @@
+/* ============================================================
+   Noctra Client — Versions page (Redesign)
+   Fully responsive 3-column Minecraft version grid matching mockup
+   c65d0c248243369.69f217daa8f89.png 1:1 with deep Appearance integration.
+   ============================================================ */
+
+.clusters-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 40px 14px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ---------- Header ---------- */
+
+.clusters-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-right: 2px;
+}
+
+.clusters-title {
+  margin: 0;
+  font-family: "Poppins", var(--font-sans);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-heading, #ffffff);
+}
+
+.clusters-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clusters-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--ghost-overlay, rgba(255, 255, 255, 0.04));
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg-secondary, #9b969e);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.clusters-chip:hover {
+  background: var(--ghost-overlay-hover, rgba(255, 255, 255, 0.08));
+  color: var(--fg-primary, #ffffff);
+}
+
+.clusters-chip.active {
+  background: var(--brand-subtle, rgba(160, 81, 162, 0.16));
+  border-color: var(--brand-border, rgba(160, 81, 162, 0.5));
+  color: var(--brand-soft, #ffffff);
+}
+
+.clusters-new-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 136px;
+  height: 36px;
+  padding: 0 11px;
+  border-radius: var(--radius, 8px);
+  background: var(--brand);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg-on-brand, #ffffff);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+.clusters-new-btn:hover {
+  background: var(--brand-hover);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ---------- Loading ---------- */
+
+.clusters-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--fg-muted, #75717a);
+}
+
+.is-spinning {
+  animation: clusters-spin 0.85s linear infinite;
+}
+
+@keyframes clusters-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Grid Container ---------- */
+
+.clusters-grid-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 6px 16px 4px;
+  margin: -4px -6px 0 -4px;
+}
+
+.clusters-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 6px 12px;
+}
+
+@media (max-width: 1040px) {
+  .clusters-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+  }
+}
+
+@media (max-width: 680px) {
+  .clusters-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* ---------- Version Card ---------- */
+
+/* Reset global `.version-card` (defined in HomeView.css for recents scroller)
+   so the clusters grid can fill columns as 1fr, not stay at 232px wide. */
+.clusters-cards-grid .version-card {
+  flex: initial;
+  width: auto;
+}
+
+.version-card {
+  position: relative;
+  height: 150px;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--component-bg, #141015);
+  border: 1px solid var(--component-border, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.22s var(--ease-out),
+              border-color 0.2s var(--ease),
+              box-shadow 0.24s var(--ease);
+}
+
+.version-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  z-index: 6;
+}
+
+.version-card:hover {
+  border-color: var(--component-border-hover, rgba(255, 255, 255, 0.22));
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* Lift the card above neighbors while its patch dropdown is open,
+   so the menu can overflow onto the row below without being clipped. */
+.version-card:has(.version-patch-chip.is-open) {
+  z-index: 100;
+}
+
+.version-card.is-selected {
+  border-color: var(--brand);
+  border-width: 1.5px;
+  box-shadow: 0 0 0 1px var(--brand-glow, rgba(160, 81, 162, 0.35)),
+              0 10px 30px rgba(0, 0, 0, 0.6),
+              0 0 28px var(--brand-glow, rgba(160, 81, 162, 0.35));
+  transform: translateY(-2px);
+}
+
+/* Respect [data-glow="off"] from appearance system */
+:root[data-glow="off"] .version-card.is-selected {
+  box-shadow: none;
+}
+
+/* Respect [data-radius="sharp"] from appearance system */
+:root[data-radius="sharp"] .version-card,
+:root[data-radius="sharp"] .version-card-art-wrap,
+:root[data-radius="sharp"] .version-patch-chip,
+:root[data-radius="sharp"] .version-patch-menu,
+:root[data-radius="sharp"] .version-loader-btn,
+:root[data-radius="sharp"] .version-gear-btn,
+:root[data-radius="sharp"] .version-launch-btn {
+  border-radius: 2px !important;
+}
+
+/* ---------- Card Artwork ---------- */
+
+.version-card-art-wrap {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--radius-lg, 12px) - 1.5px);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.version-card-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
+  opacity: 0;
+  transition: filter 0.3s var(--ease), opacity 0.25s var(--ease);
+}
+
+.version-card-art.is-ready {
+  opacity: 1;
+}
+
+.version-card.is-selected .version-card-art {
+  filter: brightness(0.85) contrast(1.08);
+}
+
+.version-card:not(.is-selected) .version-card-art {
+  filter: brightness(0.42) contrast(1.02);
+}
+
+.version-card:not(.is-selected):hover .version-card-art {
+  filter: brightness(0.65) contrast(1.05);
+}
+
+.version-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.1) 34%,
+    rgba(0, 0, 0, 0.22) 62%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+  pointer-events: none;
+}
+
+/* ---------- Centered Version Numeral ---------- */
+
+.version-card-center-numeral {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 46px 6px 46px;
+  font-family: "Poppins", var(--font-sans);
+  font-size: clamp(48px, 5.4vw, 62px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.92),
+               0 1px 3px rgba(0, 0, 0, 0.6);
+  z-index: 5;
+  transform: translateY(-4px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.version-card-center-numeral.is-long {
+  font-size: clamp(24px, 2.6vw, 30px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 20px 6px 20px;
+}
+
+/* ---------- Top-Left Patch Dropdown Pill ---------- */
+
+.version-patch-dropdown-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 25;
+}
+
+.version-patch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 7px 0 9px;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.version-patch-chip:hover,
+.version-patch-chip.is-open {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.version-patch-chevron {
+  transition: transform 0.2s var(--ease);
+}
+
+/* ---------- Patch Menu Popover ---------- */
+
+.version-patch-menu {
+  position: absolute;
+  top: 29px;
+  left: 0;
+  width: 76px;
+  min-width: 76px;
+  max-height: 124px;
+  overflow-y: auto;
+  background: rgba(12, 11, 15, 0.96);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);
+  padding: 3px 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.version-patch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 3px 8px;
+  border: none;
+  background: none;
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-secondary, rgba(255, 255, 255, 0.7));
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.version-patch-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.version-patch-item.is-active {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.version-patch-menu::-webkit-scrollbar {
+  width: 4px;
+}
+.version-patch-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full, 9999px);
+}
+
+/* ---------- Bottom Action Footer ---------- */
+
+.version-card-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.55) 42%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+}
+
+.version-footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.version-loader-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+.version-loader-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.26);
+  transform: translateY(-1px);
+}
+
+.version-loader-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.version-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.version-gear-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s var(--ease), background 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+.version-gear-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px) rotate(18deg);
+}
+
+.version-launch-btn {
+  height: 26px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm, 6px);
+  font-family: "Poppins", var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.16s var(--ease-out), border-color 0.16s var(--ease-out), color 0.16s var(--ease-out), transform 0.16s var(--ease-out), filter 0.16s var(--ease-out);
+}
+
+/* Active / selected card: solid launcher action, without a colour gradient. */
+.version-card.is-selected .version-launch-btn {
+  background: var(--brand);
+  box-shadow: 0 4px 14px var(--launch-shadow, rgba(58, 168, 159, 0.5));
+  color: var(--fg-on-brand, #ffffff);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.version-card.is-selected .version-launch-btn:hover {
+  background: var(--brand-hover);
+  filter: none;
+  transform: translateY(-1px);
+}
+
+.version-launch-icon {
+  width: 12px;
+  height: 12px;
+  display: grid;
+  place-items: center;
+}
+
+/* Inactive cards: subtle ghost button */
+.version-card:not(.is-selected) .version-launch-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.version-card:not(.is-selected) .version-launch-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.version-launch-btn.is-busy {
+  cursor: progress;
+  opacity: 0.9;
+}
+
+/* ---------- Smooth Themed Scrollbar ---------- */
+
+.clusters-grid-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clusters-grid-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.clusters-grid-container::-webkit-scrollbar-thumb {
+  background: var(--brand-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: var(--radius-full, 9999px);
+}
+
+.clusters-grid-container::-webkit-scrollbar-thumb:hover {
+  background: var(--brand, rgba(255, 255, 255, 0.3));
+}
+
+/* ---------- Staggered entrance ---------- */
+
+@keyframes cluster-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.version-card {
+  animation: cluster-card-in 0.42s var(--ease-out, cubic-bezier(0.2, 0.7, 0.2, 1)) both;
+}
+
+.clusters-cards-grid > .version-card:nth-child(1)  { animation-delay: 0.00s; }
+.clusters-cards-grid > .version-card:nth-child(2)  { animation-delay: 0.04s; }
+.clusters-cards-grid > .version-card:nth-child(3)  { animation-delay: 0.08s; }
+.clusters-cards-grid > .version-card:nth-child(4)  { animation-delay: 0.12s; }
+.clusters-cards-grid > .version-card:nth-child(5)  { animation-delay: 0.16s; }
+.clusters-cards-grid > .version-card:nth-child(6)  { animation-delay: 0.20s; }
+.clusters-cards-grid > .version-card:nth-child(7)  { animation-delay: 0.24s; }
+.clusters-cards-grid > .version-card:nth-child(8)  { animation-delay: 0.28s; }
+.clusters-cards-grid > .version-card:nth-child(9)  { animation-delay: 0.32s; }
+.clusters-cards-grid > .version-card:nth-child(n+10) { animation-delay: 0.36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .version-card {
+    animation: none;
+  }
+}

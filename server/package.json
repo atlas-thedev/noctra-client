@@ -1,0 +1,12 @@
+﻿{
+  "name": "noctra-server",
+  "version": "1.0.0",
+  "description": "Noctra Backend Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.3"
+  }
+}

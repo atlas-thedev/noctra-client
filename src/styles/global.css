@@ -1,0 +1,389 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  color: var(--fg-primary);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.window-frame {
+  height: 100vh;
+  width: 100vw;
+  background: var(--page);
+  border-radius: var(--radius-lg, 14px);
+  border: 1px solid var(--color-surface-border-subtle, rgba(255, 255, 255, 0.06));
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.window-frame.maximized {
+  border-radius: 0;
+  border: none;
+}
+
+/* Native scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+img {
+  -webkit-user-drag: none;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+  color: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  outline: none;
+  border: none;
+  color: inherit;
+  user-select: text;
+}
+
+/* Utility Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 16px var(--brand-glow);
+  }
+  50% {
+    box-shadow: 0 0 28px var(--brand-glow);
+  }
+}
+
+/* ============================================================
+   Theme + layout corrections
+
+   These live here (with a :root prefix so they win over the
+   component sheets regardless of import order) to keep older
+   screens on the active accent and to stop scroll containers
+   from slicing the top off cards as they lift on hover.
+   ============================================================ */
+
+/* ---- 1. No dead space under the navbar on any page ---- */
+
+:root .instances-view,
+:root .clusters-view,
+:root .browse-view,
+:root .stats-view,
+:root .cluster-detail-view,
+:root .home-view {
+  padding-top: 14px;
+}
+
+:root .shell-content-layer {
+  padding-top: 0;
+}
+
+:root .home-view {
+  padding-top: 0;
+}
+
+:root .instances-header,
+:root .clusters-view-header,
+:root .browse-header,
+:root .stats-header {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* ---- 2. Instances page: hover lift must not be clipped ---- */
+
+:root .instances-body {
+  padding-top: 10px;
+  padding-left: 4px;
+  padding-right: 4px;
+  margin-left: -4px;
+  margin-right: -4px;
+}
+
+/* ---- 3. Card menu that opens upward near the window bottom ---- */
+
+:root .instances-popover.drop-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform-origin: bottom right;
+  animation: fadeIn 0.12s var(--ease-out);
+}
+
+:root .instance-card.menu-open {
+  z-index: 120 !important;
+  overflow: visible !important;
+}
+
+:root .instances-popover {
+  z-index: 140 !important;
+}
+
+/* ---- 4. Secondary + browse buttons (Browse mods, Open folder, ...) ---- */
+
+:root .sub-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--component-border);
+  background: var(--component-bg);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+    color 0.15s var(--ease);
+}
+
+:root .sub-btn span,
+:root .sub-btn svg {
+  color: #ffffff;
+}
+
+:root .sub-btn:hover:not(:disabled) {
+  background: var(--component-bg-hover);
+  border-color: var(--component-border-hover);
+  color: #ffffff;
+}
+
+:root .sub-btn:disabled,
+:root .launch-btn:disabled,
+:root .instances-brand-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+  filter: grayscale(0.35);
+}
+
+:root .sub-btn.brand-btn,
+:root button.brand-btn {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--brand-gradient);
+  color: #ffffff !important;
+  font-weight: 650;
+  box-shadow: var(--shadow-brand);
+}
+
+:root .sub-btn.brand-btn span,
+:root .sub-btn.brand-btn svg,
+:root button.brand-btn span,
+:root button.brand-btn svg {
+  color: #ffffff !important;
+}
+
+:root .sub-btn.brand-btn:hover:not(:disabled),
+:root button.brand-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff !important;
+}
+
+:root .tab-empty-placeholder .sub-btn,
+:root .tab-empty-placeholder .brand-btn {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+:root .toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:root .launch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 20px;
+  border-radius: var(--radius);
+  background: var(--brand-gradient);
+  color: var(--fg-on-brand);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 650;
+  box-shadow: var(--shadow-brand);
+  transition: filter 0.15s var(--ease), transform 0.15s var(--ease-out);
+}
+
+:root .launch-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+:root .launch-btn.kill {
+  background: var(--danger);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* ---- 5. Accent-aware colours for the older screens ---- */
+
+:root .instances-chip.active {
+  color: #ffffff;
+}
+
+:root .instances-chip.active svg,
+:root .instances-chip:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff;
+}
+
+:root .instance-chip.brand {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+:root .instances-empty-icon,
+:root .instance-add-card:hover {
+  color: var(--brand-soft);
+}
+
+:root .instances-popover-item.active,
+:root .instances-popover-item:hover,
+:root .browse-sort-popover-item.active,
+:root .browse-sort-popover-item:hover,
+:root .dropdown-option.active,
+:root .dropdown-option:hover {
+  color: #ffffff;
+}
+
+:root .instances-popover-item.active svg,
+:root .instances-popover-item:hover svg,
+:root .browse-sort-popover-item.active svg,
+:root .browse-sort-popover-item:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff;
+}
+
+:root .instances-popover-item.danger {
+  color: var(--danger);
+}
+
+:root .instance-card-live {
+  color: var(--success);
+}
+
+:root .badge-installed {
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: var(--success-subtle);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--success);
+}
+
+:root .icon-delete-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+:root .icon-delete-btn:hover {
+  background: rgba(242, 85, 90, 0.14);
+  color: var(--danger);
+}
+
+/* Reduced-motion mode from the appearance settings */
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Universal White Plus Icons Across All Pages */
+:root svg.lucide-plus,
+:root svg.lucide-user-plus,
+:root svg.lucide-user-round-plus,
+:root .lucide-plus,
+:root .lucide-user-plus,
+:root .lucide-user-round-plus,
+:root .native-icon-plus,
+:root .native-icon-plus path,
+:root .icon-plus,
+:root .icon-plus svg,
+:root .im-upload-banner-icon,
+:root .im-upload-banner-icon svg,
+:root .im-add svg,
+:root .sm-add svg,
+:root .instances-brand-btn svg,
+:root .locker-upload-plus,
+:root .locker-upload-plus svg,
+:root [data-action="add"] svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+

@@ -1,0 +1,37 @@
+node_modules/
+dist/
+release/
+
+# secrets
+electron-builder.env
+.env
+.env.*
+*.pem
+*.pfx
+
+# logs
+npm-debug.log*
+*.log
+
+# editor / scratch
+*.bak
+*.orig
+*.rej
+.idea/
+.junie/
+
+# os
+.DS_Store
+Thumbs.db
+.gitconfig
+
+# test screenshots
+screenshot-*.png
+
+# database and runtime data
+skin-server/data/
+*.db
+*.env
+credentials.json
+*.key
+.credentials

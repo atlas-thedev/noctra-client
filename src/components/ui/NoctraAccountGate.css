@@ -1,0 +1,136 @@
+/* ============================================================
+   Noctra Client — Noctra Account Required Gate
+   Styled using launcher appearance tokens and button aesthetics.
+   ============================================================ */
+
+.noctra-account-gate {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--page);
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+.gate-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+  margin: auto;
+  animation: gate-rise 0.22s var(--ease-out);
+}
+
+@keyframes gate-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gate-mascot {
+  width: 152px;
+  height: auto;
+  max-height: 165px;
+  object-fit: contain;
+  margin-bottom: 20px;
+  user-select: none;
+  filter: drop-shadow(0 10px 24px var(--brand-glow)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+
+.gate-title {
+  margin: 0 0 10px 0;
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-heading, #ffffff);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.gate-subtitle {
+  margin: 0 0 24px 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 450;
+  color: var(--fg-secondary);
+  line-height: 1.55;
+  max-width: 380px;
+}
+
+.gate-btn-signin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 46px;
+  min-width: 164px;
+  padding: 0 28px;
+  background: var(--brand);
+  color: var(--fg-on-brand, #ffffff);
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  user-select: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 8px 24px var(--brand-glow),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.16s var(--ease-out), background-color 0.16s var(--ease-out),
+    border-color 0.16s var(--ease-out), box-shadow 0.16s var(--ease-out), filter 0.16s var(--ease);
+}
+
+.gate-btn-signin:hover {
+  background: var(--brand-hover);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1.5px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 12px 30px var(--brand-glow),
+    0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.gate-btn-signin:active {
+  background: var(--brand-pressed);
+  transform: scale(0.98);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 14px var(--brand-glow);
+}
+
+.gate-btn-home {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius, 8px);
+  color: var(--fg-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+.gate-btn-home:hover {
+  background: var(--ghost-overlay-hover);
+  border-color: var(--component-border);
+  color: var(--fg-primary);
+}

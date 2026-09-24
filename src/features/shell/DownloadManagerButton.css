@@ -1,0 +1,186 @@
+.dl-manager {
+  position: relative;
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  margin-right: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.dl-manager-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--component-border);
+  background: var(--component-bg);
+  color: var(--fg-secondary);
+  cursor: pointer;
+  transition: all 150ms var(--ease);
+}
+
+.dl-manager-pill:hover {
+  border-color: var(--component-border-hover);
+  background: var(--component-bg-hover);
+  color: var(--fg-primary);
+}
+
+.dl-manager-pill.is-active {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dl-manager-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-pulse {
+  animation: dl-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes dl-pulse {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(2px); }
+}
+
+.dl-manager-progress-bg {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.dl-manager-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+  transition: width 200ms var(--ease-out);
+}
+
+.dl-manager-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  border: 1px solid var(--component-border-hover);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--component-bg) 85%, rgba(0, 0, 0, 0.8));
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: popover-in 150ms var(--ease-out);
+  transform-origin: top right;
+  overflow: hidden;
+}
+
+.dl-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--component-border);
+}
+
+.dl-manager-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+
+.dl-manager-header span {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.dl-manager-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.dl-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+}
+
+.dl-manager-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--fg-secondary);
+}
+
+.text-success {
+  color: #10b981;
+}
+
+.dl-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.dl-manager-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dl-manager-item-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dl-manager-item-detail {
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.dl-manager-item-bar {
+  height: 3px;
+  border-radius: 1.5px;
+  background: rgba(255, 255, 255, 0.15);
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.dl-manager-item-bar-fill {
+  height: 100%;
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  border-radius: 1.5px;
+  transition: width 200ms var(--ease-out);
+}
+
+.dl-manager-item-pct {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-secondary);
+  min-width: 32px;
+  text-align: right;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

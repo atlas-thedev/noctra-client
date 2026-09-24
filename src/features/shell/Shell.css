@@ -1,0 +1,31 @@
+.app-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--page);
+  overflow: hidden;
+  border-radius: inherit;
+}
+.shell-content-layer {
+  position: absolute;
+  z-index: 1;
+  inset: var(--navbar-height, 39px) 0 0 var(--nav-rail-width, 72px);
+  display: flex;
+  overflow: hidden;
+}
+.shell-content-layer > * {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  animation: shell-view-in 0.2s var(--ease-out);
+}
+@keyframes shell-view-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

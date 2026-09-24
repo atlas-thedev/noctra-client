@@ -1,0 +1,1022 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Copy,
+  Cpu,
+  Database,
+  ExternalLink,
+  Folder,
+  Globe,
+  HardDrive,
+  History,
+  Info,
+  Monitor,
+  RefreshCw,
+  Search,
+  Settings as SettingsIcon,
+  ShieldCheck,
+  Sliders,
+  Terminal,
+  X,
+  Zap
+} from 'lucide-react';
+import Dropdown from '../../components/ui/Dropdown.jsx';
+import Logo from '../../components/ui/Logo.jsx';
+import StoragePanel from './StoragePanel.jsx';
+import ChangelogPanel from './ChangelogPanel.jsx';
+import { SUPPORTED_LOCALES } from '../../i18n/catalogs.js';
+import { useI18n } from '../../i18n/I18nProvider.jsx';
+import packageInfo from '../../../package.json';
+import './SettingsView.css';
+
+const TABS = [
+  {
+    id: 'launcher',
+    title: 'General & Launcher',
+    desc: 'Language, behavior & updates',
+    icon: SettingsIcon,
+    group: 'Client'
+  },
+  {
+    id: 'minecraft',
+    title: 'Game & Display',
+    desc: 'Fullscreen, resolution & RAM',
+    icon: Monitor,
+    group: 'Client'
+  },
+  {
+    id: 'java',
+    title: 'Java & Arguments',
+    desc: 'Runtime & launch flags',
+    icon: Terminal,
+    group: 'Client'
+  },
+  {
+    id: 'storage',
+    title: 'Storage & Caches',
+    desc: 'Disk space & clear cache',
+    icon: HardDrive,
+    group: 'System'
+  },
+  {
+    id: 'changelog',
+    title: 'Release Notes',
+    desc: 'Version history & patch notes',
+    icon: History,
+    group: 'System'
+  },
+  {
+    id: 'about',
+    title: 'About Noctra',
+    desc: 'System info & credits',
+    icon: Info,
+    group: 'System'
+  }
+];
+
+const PREFS_KEY = 'noctra.preferences';
+const LEGACY_PREFS_KEY = 'native.preferences';
+
+const DEFAULT_PREFS = {
+  discordRpc: true,
+  closeOnLaunch: false,
+  keepLogs: true,
+  fullscreen: false,
+  ram: 4,
+  resolutionWidth: 1920,
+  resolutionHeight: 1080,
+  javaPath: '',
+  javaArgs: ''
+};
+
+const LANGUAGE_NAMES = {
+  en: 'English',
+  es: 'Español',
+  de: 'Deutsch',
+  fr: 'Français',
+  'pt-BR': 'Português (Brasil)',
+  tr: 'Türkçe'
+};
+
+const RAM_PRESETS = [
+  { val: 2, label: '2 GB', hint: 'Light / Vanilla' },
+  { val: 4, label: '4 GB', hint: 'Standard Default' },
+  { val: 6, label: '6 GB', hint: 'Recommended' },
+  { val: 8, label: '8 GB', hint: 'Heavy Mods' },
+  { val: 12, label: '12 GB', hint: 'Shaders / 4K' },
+  { val: 16, label: '16 GB', hint: 'Extreme' }
+];
+
+const RESOLUTION_PRESETS = [
+  { w: 1280, h: 720, label: '1280 × 720', sub: 'HD' },
+  { w: 1920, h: 1080, label: '1920 × 1080', sub: 'FHD' },
+  { w: 2560, h: 1440, label: '2560 × 1440', sub: 'QHD 2K' },
+  { w: 3840, h: 2160, label: '3840 × 2160', sub: '4K UHD' }
+];
+
+const JVM_FLAG_PRESETS = [
+  {
+    id: 'default',
+    name: 'G1GC Default',
+    flags: '-XX:+UseG1GC'
+  },
+  {
+    id: 'aikar',
+    name: "Aikar's Optimized (Low Lag)",
+    flags:
+      '-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1'
+  },
+  {
+    id: 'shenandoah',
+    name: 'Shenandoah Low-Pause',
+    flags: '-XX:+UseShenandoahGC -XX:+AlwaysPreTouch'
+  },
+  {
+    id: 'clear',
+    name: 'Clear Flags',
+    flags: ''
+  }
+];
+
+function readPrefs() {
+  try {
+    const raw = window.localStorage.getItem(PREFS_KEY) || window.localStorage.getItem(LEGACY_PREFS_KEY);
+    return raw ? { ...DEFAULT_PREFS, ...JSON.parse(raw) } : { ...DEFAULT_PREFS };
+  } catch {
+    return { ...DEFAULT_PREFS };
+  }
+}
+
+export default function SettingsView({
+  initialTab = 'launcher',
+  instances = [],
+  onOpenUpdater,
+  onBack
+}) {
+  const { locale, setLocale, t } = useI18n();
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [prefs, setPrefs] = useState(readPrefs);
+  const [dataDir, setDataDir] = useState('');
+  const [copiedPath, setCopiedPath] = useState(false);
+  const [updates, setUpdates] = useState({
+    checkOnStartup: true,
+    backgroundChecks: true,
+    autoDownload: false
+  });
+
+  const buildVersion = window.native?.version || packageInfo.version || '3.9.110';
+
+  useEffect(() => {
+    if (window.native?.settings?.dataDir) {
+      window.native.settings.dataDir().then(setDataDir).catch(() => {});
+    }
+  }, []);
+
+  // Sync update prefs from native settings store
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const stored = window.native?.settings?.load
+          ? await window.native.settings.load()
+          : JSON.parse(localStorage.getItem('noctra.settings') || localStorage.getItem('native.settings') || '{}');
+        const u = stored?.updates ?? {};
+        if (!cancelled) {
+          setUpdates({
+            checkOnStartup: u.checkOnStartup !== false,
+            backgroundChecks: u.backgroundChecks !== false,
+            autoDownload: u.autoDownload === true
+          });
+        }
+      } catch {
+        /* fallback defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'Escape' && onBack) {
+        onBack();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onBack]);
+
+  const updatePref = (patch) => {
+    setPrefs((prev) => {
+      const next = { ...prev, ...patch };
+      try {
+        window.localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    if (window.native?.settings) {
+      window.native.settings
+        .load()
+        .then((current) => {
+          window.native.settings.save({
+            ...current,
+            behavior: { ...(current?.behavior ?? {}), ...patch }
+          });
+        })
+        .catch(() => {});
+    }
+  };
+
+  const handleOpenDataDir = () => {
+    if (window.native?.settings?.openDataDir) {
+      window.native.settings.openDataDir();
+    }
+  };
+
+  const handleCopyPath = () => {
+    if (dataDir) {
+      navigator.clipboard?.writeText(dataDir);
+      setCopiedPath(true);
+      setTimeout(() => setCopiedPath(false), 2000);
+    }
+  };
+
+  const changeLanguage = async (nextLocale) => {
+    setLocale(nextLocale);
+    if (window.native?.settings) {
+      const current = await window.native.settings.load();
+      await window.native.settings.save({
+        ...current,
+        onboarding: { ...(current?.onboarding ?? {}), language: nextLocale }
+      });
+    } else {
+      const current = JSON.parse(localStorage.getItem('noctra.settings') || localStorage.getItem('native.settings') || '{}');
+      localStorage.setItem(
+        'noctra.settings',
+        JSON.stringify({
+          ...current,
+          onboarding: { ...(current.onboarding ?? {}), language: nextLocale }
+        })
+      );
+    }
+  };
+
+  const changeUpdateSetting = async (patch) => {
+    setUpdates((prev) => ({ ...prev, ...patch }));
+    try {
+      if (window.native?.settings) {
+        const current = await window.native.settings.load();
+        await window.native.settings.save({
+          ...current,
+          updates: { ...(current?.updates ?? {}), ...patch }
+        });
+      } else {
+        const current = JSON.parse(localStorage.getItem('noctra.settings') || localStorage.getItem('native.settings') || '{}');
+        localStorage.setItem(
+          'noctra.settings',
+          JSON.stringify({
+            ...current,
+            updates: { ...(current.updates ?? {}), ...patch }
+          })
+        );
+      }
+    } catch {}
+  };
+
+  const filteredTabs = useMemo(() => {
+    if (!searchQuery.trim()) return TABS;
+    const q = searchQuery.toLowerCase();
+    return TABS.filter(
+      (t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.desc.toLowerCase().includes(q) ||
+        t.group.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  const currentTabObj = TABS.find((t) => t.id === activeTab) || TABS[0];
+
+  return (
+    <div className="settings-view-page" data-testid="settings-view-page">
+      {/* ── Left Sidebar Navigation ── */}
+      <aside className="settings-page-sidebar">
+        <div className="settings-sidebar-top">
+          <div className="settings-sidebar-brand">
+            <span className="settings-sidebar-kicker">Preferences</span>
+            {onBack && (
+              <button
+                type="button"
+                className="settings-back-btn"
+                onClick={onBack}
+                title="Back to launcher"
+              >
+                <ArrowLeft size={13} />
+                <span>Back</span>
+              </button>
+            )}
+          </div>
+
+          <div className="settings-search-box">
+            <Search size={14} className="settings-search-icon" aria-hidden="true" />
+            <input
+              type="text"
+              className="settings-search-input"
+              placeholder="Search settings..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <nav className="settings-nav-list" aria-label="Settings categories">
+          {['Client', 'System'].map((groupName) => {
+            const groupTabs = filteredTabs.filter((tab) => tab.group === groupName);
+            if (groupTabs.length === 0) return null;
+            return (
+              <React.Fragment key={groupName}>
+                <span className="settings-nav-group-label">{groupName}</span>
+                {groupTabs.map((tab) => {
+                  const IconComp = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`settings-nav-btn ${isActive ? 'is-active' : ''}`}
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      <div className="settings-nav-icon-wrap">
+                        <IconComp size={15} />
+                      </div>
+                      <div className="settings-nav-text">
+                        <span className="settings-nav-title">{tab.title}</span>
+                        <span className="settings-nav-desc">{tab.desc}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </nav>
+
+        <div className="settings-sidebar-footer">
+          <span>Noctra Client</span>
+          <b>v{buildVersion}</b>
+        </div>
+      </aside>
+
+      {/* ── Right Main Content Area ── */}
+      <main className="settings-page-main">
+        {/* Header Bar */}
+        <header className="settings-page-header">
+          <div className="settings-header-info">
+            <div className="settings-header-breadcrumb">
+              <span>Settings</span>
+              <span>/</span>
+              <span>{currentTabObj.group}</span>
+            </div>
+            <h2 className="settings-header-title">{currentTabObj.title}</h2>
+            <p className="settings-header-desc">{currentTabObj.desc}</p>
+          </div>
+
+          {onBack && (
+            <button
+              type="button"
+              className="settings-close-icon-btn"
+              onClick={onBack}
+              title="Close Settings (Esc)"
+              aria-label="Close Settings"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </header>
+
+        {/* Scrollable Settings Cards Container */}
+        <div className="settings-scroll-container">
+          {/* ════ TAB: LAUNCHER & GENERAL ════ */}
+          {activeTab === 'launcher' && (
+            <>
+              {/* Interface Language */}
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">Interface & Language</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Globe size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.interfaceLanguage')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.interfaceLanguageDesc')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <Dropdown
+                        className="settings-language-dropdown"
+                        value={locale}
+                        options={SUPPORTED_LOCALES.map((code) => ({
+                          value: code,
+                          label: LANGUAGE_NAMES[code] || code
+                        }))}
+                        onChange={(next) => changeLanguage(next)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Behavior & Features */}
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">{t('settings.behavior')}</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  {/* Discord RPC */}
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Zap size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">Discord Rich Presence</span>
+                        <span className="setting-card-desc">{t('settings.discordDesc')}</span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={prefs.discordRpc}
+                          onChange={(e) => updatePref({ discordRpc: e.target.checked })}
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Close on Launch */}
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Monitor size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.closeOnLaunch')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.closeOnLaunchDesc')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={prefs.closeOnLaunch}
+                          onChange={(e) => updatePref({ closeOnLaunch: e.target.checked })}
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Keep Logs */}
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Terminal size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.keepLogs')}</span>
+                        <span className="setting-card-desc">{t('settings.keepLogsDesc')}</span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={prefs.keepLogs}
+                          onChange={(e) => updatePref({ keepLogs: e.target.checked })}
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Directory */}
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">{t('settings.dataFolder')}</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  <div className="noctra-setting-card is-vertical">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Folder size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.dataLocation')}</span>
+                        <span className="setting-card-desc">
+                          Stores your downloaded Minecraft packages, assets, profiles, and runtime
+                          files.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="noctra-code-input-wrap">
+                      <input
+                        type="text"
+                        readOnly
+                        value={dataDir || t('settings.defaultData')}
+                        className="noctra-code-input"
+                      />
+                      <button
+                        type="button"
+                        className="noctra-btn-secondary"
+                        onClick={handleCopyPath}
+                        title="Copy folder path"
+                      >
+                        {copiedPath ? <Check size={14} /> : <Copy size={14} />}
+                        <span>{copiedPath ? 'Copied' : 'Copy'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="noctra-btn-primary"
+                        onClick={handleOpenDataDir}
+                        title="Open in File Explorer"
+                      >
+                        <Folder size={14} />
+                        <span>Open Folder</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Updates & Software Delivery */}
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">{t('settings.updates')}</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <RefreshCw size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">
+                          Noctra Client Build v{buildVersion}
+                        </span>
+                        <span className="setting-card-desc">
+                          Production release channel. Click to check for launcher updates.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <button
+                        type="button"
+                        className="noctra-btn-primary"
+                        onClick={onOpenUpdater}
+                      >
+                        <RefreshCw size={14} />
+                        <span>{t('settings.checkUpdates')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <ShieldCheck size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.checkOnStartup')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.checkOnStartupDesc')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={updates.checkOnStartup}
+                          onChange={(e) =>
+                            changeUpdateSetting({ checkOnStartup: e.target.checked })
+                          }
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <History size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">
+                          {t('settings.backgroundChecks')}
+                        </span>
+                        <span className="setting-card-desc">
+                          {t('settings.backgroundChecksDesc')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={updates.backgroundChecks}
+                          onChange={(e) =>
+                            changeUpdateSetting({ backgroundChecks: e.target.checked })
+                          }
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Zap size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.autoDownload')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.autoDownloadDesc')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={updates.autoDownload}
+                          onChange={(e) => changeUpdateSetting({ autoDownload: e.target.checked })}
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ════ TAB: MINECRAFT & DISPLAY ════ */}
+          {activeTab === 'minecraft' && (
+            <>
+              {/* Display & Window */}
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">Window & Display</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  {/* Fullscreen Toggle */}
+                  <div className="noctra-setting-card">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Monitor size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.fullscreen')}</span>
+                        <span className="setting-card-desc">{t('settings.fullscreenDesc')}</span>
+                      </div>
+                    </div>
+                    <div className="setting-card-control">
+                      <label className="noctra-switch">
+                        <input
+                          type="checkbox"
+                          checked={prefs.fullscreen}
+                          onChange={(e) => updatePref({ fullscreen: e.target.checked })}
+                        />
+                        <span className="noctra-switch-track">
+                          <span className="noctra-switch-thumb" />
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Resolution Presets */}
+                  <div className="noctra-setting-card is-vertical">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Sliders size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">Default Window Dimensions</span>
+                        <span className="setting-card-desc">
+                          Target viewport size when launching instances in windowed mode.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="resolution-presets-grid">
+                      {RESOLUTION_PRESETS.map((res) => {
+                        const isSelected =
+                          prefs.resolutionWidth === res.w && prefs.resolutionHeight === res.h;
+                        return (
+                          <button
+                            key={res.label}
+                            type="button"
+                            className={`resolution-card-btn ${isSelected ? 'is-active' : ''}`}
+                            onClick={() =>
+                              updatePref({ resolutionWidth: res.w, resolutionHeight: res.h })
+                            }
+                          >
+                            <span className="resolution-label">{res.label}</span>
+                            <span className="resolution-sub">{res.sub}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Memory Allocation */}
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">Memory Allocation (RAM)</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  <div className="noctra-setting-card is-vertical">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Cpu size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.defaultMemory')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.defaultMemoryDesc')}. 4 GB to 6 GB is ideal for almost all
+                          modpacks and vanilla setups.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="ram-widget-container">
+                      <div className="ram-slider-row">
+                        <input
+                          type="range"
+                          min="2"
+                          max="16"
+                          step="1"
+                          value={prefs.ram}
+                          onChange={(e) => updatePref({ ram: Number(e.target.value) })}
+                          className="ram-range-input"
+                        />
+                        <span className="ram-badge-large">{prefs.ram} GB</span>
+                      </div>
+
+                      <div className="ram-presets-row">
+                        {RAM_PRESETS.map((preset) => (
+                          <button
+                            key={preset.val}
+                            type="button"
+                            className={`preset-chip-btn ${prefs.ram === preset.val ? 'is-active' : ''}`}
+                            onClick={() => updatePref({ ram: preset.val })}
+                          >
+                            <span>{preset.label}</span>
+                            <small>({preset.hint})</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ════ TAB: JAVA & RUNTIME ════ */}
+          {activeTab === 'java' && (
+            <>
+              <div className="settings-section-block">
+                <div className="settings-section-title-wrap">
+                  <span className="settings-section-title">{t('settings.javaRuntime')}</span>
+                  <div className="settings-section-line" />
+                </div>
+                <div className="settings-cards-stack">
+                  {/* Bundled / Custom Java Path */}
+                  <div className="noctra-setting-card is-vertical">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Terminal size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.javaExecutable')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.javaExecutableDesc')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="noctra-code-input-wrap">
+                      <input
+                        type="text"
+                        className="noctra-code-input"
+                        placeholder={t('settings.javaAuto')}
+                        value={prefs.javaPath}
+                        onChange={(e) => updatePref({ javaPath: e.target.value })}
+                      />
+                      {prefs.javaPath && (
+                        <button
+                          type="button"
+                          className="noctra-btn-secondary"
+                          onClick={() => updatePref({ javaPath: '' })}
+                          title="Reset to automatically detected Java"
+                        >
+                          <X size={14} />
+                          <span>Reset</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* JVM Flags & Presets */}
+                  <div className="noctra-setting-card is-vertical">
+                    <div className="setting-card-left">
+                      <div className="setting-card-icon-wrap">
+                        <Zap size={18} />
+                      </div>
+                      <div className="setting-card-text">
+                        <span className="setting-card-name">{t('settings.jvmArgs')}</span>
+                        <span className="setting-card-desc">
+                          {t('settings.jvmArgsDesc')}. Select a quick optimization preset or type
+                          custom arguments.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="ram-presets-row">
+                      {JVM_FLAG_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          className={`preset-chip-btn ${prefs.javaArgs === preset.flags ? 'is-active' : ''}`}
+                          onClick={() => updatePref({ javaArgs: preset.flags })}
+                        >
+                          <span>{preset.name}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="noctra-code-input-wrap">
+                      <input
+                        type="text"
+                        className="noctra-code-input"
+                        placeholder="-XX:+UseG1GC"
+                        value={prefs.javaArgs}
+                        onChange={(e) => updatePref({ javaArgs: e.target.value })}
+                      />
+                      {prefs.javaArgs && (
+                        <button
+                          type="button"
+                          className="noctra-btn-secondary"
+                          onClick={() => updatePref({ javaArgs: '' })}
+                          title="Clear JVM arguments"
+                        >
+                          <X size={14} />
+                          <span>Clear</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ════ TAB: STORAGE ════ */}
+          {activeTab === 'storage' && (
+            <div className="settings-section-block">
+              <StoragePanel instances={instances} />
+            </div>
+          )}
+
+          {/* ════ TAB: CHANGELOG ════ */}
+          {activeTab === 'changelog' && (
+            <div className="settings-section-block">
+              <ChangelogPanel onOpenUpdater={onOpenUpdater} />
+            </div>
+          )}
+
+          {/* ════ TAB: ABOUT NOCTRA ════ */}
+          {activeTab === 'about' && (
+            <div className="settings-section-block">
+              <div className="about-noctra-hero">
+                <div className="about-hero-left">
+                  <div className="about-logo-badge">
+                    <Logo height={34} variant="mark" />
+                  </div>
+                  <div className="about-hero-titles">
+                    <h3>Noctra Client</h3>
+                    <p>Next-generation, high-performance Minecraft launcher & modpack platform.</p>
+                  </div>
+                </div>
+                <div className="setting-card-control">
+                  <button
+                    type="button"
+                    className="noctra-btn-primary"
+                    onClick={onOpenUpdater}
+                  >
+                    <RefreshCw size={14} />
+                    <span>Check Updates</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="settings-section-title-wrap" style={{ marginTop: '20px' }}>
+                <span className="settings-section-title">Runtime & Platform Information</span>
+                <div className="settings-section-line" />
+              </div>
+
+              <div className="about-info-grid">
+                <div className="about-info-stat-card">
+                  <span className="about-stat-label">Launcher Version</span>
+                  <span className="about-stat-val">v{buildVersion}</span>
+                </div>
+                <div className="about-info-stat-card">
+                  <span className="about-stat-label">Release Channel</span>
+                  <span className="about-stat-val">Production (Stable)</span>
+                </div>
+                <div className="about-info-stat-card">
+                  <span className="about-stat-label">Platform Architecture</span>
+                  <span className="about-stat-val">
+                    {window.navigator?.platform || 'Windows x64'}
+                  </span>
+                </div>
+                <div className="about-info-stat-card">
+                  <span className="about-stat-label">Theme Engine</span>
+                  <span className="about-stat-val">OLED True Black (Hardware Accel)</span>
+                </div>
+              </div>
+
+              <div className="settings-section-title-wrap" style={{ marginTop: '20px' }}>
+                <span className="settings-section-title">Community & Support</span>
+                <div className="settings-section-line" />
+              </div>
+
+              <div className="about-links-row">
+                <button
+                  type="button"
+                  className="noctra-btn-secondary"
+                  onClick={() =>
+                    window.native?.openExternal
+                      ? window.native.openExternal('https://github.com/atlas-thedev/noctra-client')
+                      : window.open('https://github.com/atlas-thedev/noctra-client', '_blank')
+                  }
+                >
+                  <ExternalLink size={14} />
+                  <span>GitHub Repository</span>
+                </button>
+                <button
+                  type="button"
+                  className="noctra-btn-secondary"
+                  onClick={() =>
+                    window.native?.openExternal
+                      ? window.native.openExternal('https://github.com/atlas-thedev/noctra-client/issues')
+                      : window.open('https://github.com/atlas-thedev/noctra-client/issues', '_blank')
+                  }
+                >
+                  <ExternalLink size={14} />
+                  <span>Issue Tracker</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

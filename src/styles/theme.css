@@ -1,0 +1,245 @@
+/* ============================================================
+   Noctra Client — design tokens
+
+   Theme presets live here, applied by lib/appearance.js as
+   data-attributes on <html>:
+     data-surface  dim | dark | midnight | black
+     data-contrast soft | normal | high
+     data-radius   sharp | soft | round
+     data-glow     on | off
+     data-motion   full | reduced
+
+   The accent colour is written as inline custom properties by
+   appearance.js (--brand, --brand-2, --launch-gradient, ...), so
+   every surface, border and glow below follows the user's pick.
+   ============================================================ */
+
+@import "./fonts.css";
+
+:root {
+  color-scheme:dark;
+  --color-bg-beyond-black:#000000;
+  --color-surface-dark:#050608;
+  --color-surface-elevated:#08090c;
+  --color-surface-border:rgba(255,255,255,.08);
+  --color-surface-border-subtle:rgba(255,255,255,.04);
+  --color-primary-purple:#18181b;
+  --color-primary-purple-hover:#27272a;
+  --color-primary-purple-glow:rgba(255,255,255,.08);
+  --color-launch-teal:#18181b;
+  --color-launch-teal-hover:#27272a;
+  --color-text-primary:#d2d2d2;
+  --color-text-heading:#fff;
+  --color-text-muted:#75717a;
+  --color-success:#22c55e;
+  --color-warning:#f97316;
+  --color-danger:#ef4444;
+  --color-gold:#f59e0b;
+  --page:var(--color-bg-beyond-black);
+  --page-elevated:var(--color-surface-dark);
+  --page-overlay:rgba(0,0,0,.85);
+  --page-sunken:#000000;
+  --elevated-bg:var(--color-surface-elevated);
+  --component-bg:var(--color-surface-elevated);
+  --component-bg-hover:#0e1014;
+  --component-bg-pressed:#14171d;
+  --component-border:var(--color-surface-border);
+  --component-border-hover:rgba(255,255,255,.15);
+  --component-border-pressed:rgba(255,255,255,.2);
+  --ghost-overlay:rgba(255,255,255,.04);
+  --ghost-overlay-hover:rgba(255,255,255,.07);
+  --ghost-overlay-pressed:rgba(255,255,255,.1);
+  --fg-primary:var(--color-text-primary);
+  --fg-primary-hover:#fff;
+  --fg-primary-pressed:#fff;
+  --fg-secondary:#9b969e;
+  --fg-secondary-hover:#c6c1c8;
+  --fg-muted:var(--color-text-muted);
+  --fg-on-brand:#fff;
+  --brand:#000000;
+  --brand-hover:#18181b;
+  --brand-pressed:#09090b;
+  --brand-2:#27272a;
+  --brand-disabled:#111113;
+  --brand-subtle:rgba(255,255,255,.06);
+  --brand-subtle-hover:rgba(255,255,255,.12);
+  --brand-border:rgba(255,255,255,.2);
+  --brand-glow:rgba(255,255,255,.08);
+  --brand-solid:#000000;
+  --brand-solid-fg:#fff;
+  --brand-gradient:linear-gradient(135deg,#27272a 0%,#18181b 58%,#000000 100%);
+  --launch-gradient:linear-gradient(135deg,#27272a 0%,#18181b 55%,#000000 100%);
+  --danger:var(--color-danger);
+  --danger-hover:#dc3434;
+  --danger-subtle:rgba(239,68,68,.14);
+  --success:var(--color-success);
+  --success-subtle:rgba(34,197,94,.14);
+  --warning:var(--color-warning);
+  --warning-subtle:rgba(249,115,22,.14);
+  --info:#5aa9f0;
+  --modrinth:#1bd96a;
+  --modrinth-bg:rgba(27,217,106,.14);
+  --curseforge:#f16436;
+  --curseforge-bg:rgba(241,100,54,.14);
+  --font-sans:"Figtree","Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:"JetBrains Mono",Consolas,monospace;
+  --radius-xs:4px;
+  --radius-sm:6px;
+  --radius:8px;
+  --radius-md:10px;
+  --radius-lg:12px;
+  --radius-xl:16px;
+  --radius-full:9999px;
+  --navbar-height:39px;
+  --titlebar-btn-width:44px;
+  --nav-rail-width:72px;
+  --social-drawer-width:280px;
+  --home-padding:44px;
+  --page-padding:28px;
+  --ui-scale:1;
+  --home-scrim:.58;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-spring:cubic-bezier(.34,1.4,.64,1);
+  --shadow-card:0 10px 26px -8px rgba(0,0,0,.65);
+  --shadow-popover:0 18px 44px rgba(0,0,0,.75);
+  --shadow-brand:0 0 28px rgba(160,81,162,.28);
+  --shadow-lift:0 18px 40px -14px rgba(0,0,0,.85);
+  --bg-raise:var(--component-bg);
+  --border:var(--component-border);
+  --text:var(--fg-primary);
+  --text-dim:var(--fg-secondary);
+  --accent:var(--brand);
+  --accent-deep:var(--brand-pressed);
+  --accent-soft:var(--brand-subtle);
+  --accent-border:var(--brand-border);
+  --accent-text:#d9a6da;
+  --panel-grad-1:var(--component-bg);
+  --panel-grad-2:var(--page-elevated);
+  --ms-blue-1:#3b7fd4;
+  --ms-blue-2:#205ba6;
+
+  /* ---- structure ---- */
+  --rail-width: var(--nav-rail-width);
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.13);
+  --surface-glass: rgba(0, 0, 0, 0.6);
+  --surface-glass-strong: rgba(0, 0, 0, 0.88);
+  --surface-tint: rgba(255, 255, 255, 0.05);
+  --surface-tint-hover: rgba(255, 255, 255, 0.09);
+  --overlay-scrim: rgba(0, 0, 0, 0.72);
+  --shadow-panel: 0 18px 44px -22px rgba(0, 0, 0, 0.85);
+  --fg-on-danger: #ffffff;
+  --info-gradient: linear-gradient(135deg, #3d86d8, #234f88);
+  --danger-gradient: linear-gradient(135deg, #e0525d, #a3222d);
+  --install-gradient: var(--brand-gradient);
+  --blur-glass: 14px;
+  --on-accent: var(--fg-on-brand);
+  --bg-panel: var(--component-bg);
+  --bg: var(--page);
+  --online: var(--color-success);
+}
+
+/* ---------- surfaces (locked to black) ---------- */
+
+:root[data-surface='dim'],
+:root[data-surface='dark'],
+:root[data-surface='midnight'],
+:root[data-surface='black'] {
+  --color-bg-beyond-black: #000000;
+  --color-surface-dark: #050608;
+  --color-surface-elevated: #08090c;
+  --page: #000000;
+  --page-elevated: #050608;
+  --page-sunken: #000000;
+  --page-overlay: rgba(0, 0, 0, 0.85);
+  --component-bg: #08090c;
+  --component-bg-hover: #0e1014;
+  --component-bg-pressed: #14171d;
+  --elevated-bg: #08090c;
+  --surface-glass: rgba(0, 0, 0, 0.6);
+  --surface-glass-strong: rgba(0, 0, 0, 0.88);
+  --panel-grad-1: #08090c;
+  --panel-grad-2: #050608;
+}
+
+/* ---------- contrast ---------- */
+
+:root[data-contrast='soft'] {
+  --color-surface-border: rgba(255, 255, 255, 0.06);
+  --component-border: rgba(255, 255, 255, 0.06);
+  --component-border-hover: rgba(255, 255, 255, 0.12);
+  --fg-primary: #b9b4bc;
+  --fg-secondary: #8d8890;
+  --fg-muted: #6b666e;
+  --hairline: rgba(255, 255, 255, 0.05);
+  --hairline-strong: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-contrast='high'] {
+  --color-surface-border: rgba(255, 255, 255, 0.16);
+  --component-border: rgba(255, 255, 255, 0.16);
+  --component-border-hover: rgba(255, 255, 255, 0.28);
+  --fg-primary: #ffffff;
+  --fg-secondary: #d4cfd6;
+  --fg-muted: #9c97a0;
+  --hairline: rgba(255, 255, 255, 0.14);
+  --hairline-strong: rgba(255, 255, 255, 0.24);
+  --surface-glass: rgba(0, 0, 0, 0.78);
+  --surface-glass-strong: rgba(0, 0, 0, 0.94);
+}
+
+/* ---------- corner rounding ---------- */
+
+:root[data-radius='sharp'] {
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius: 4px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+}
+
+:root[data-radius='soft'] {
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+}
+
+:root[data-radius='round'] {
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius: 16px;
+  --radius-md: 18px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+}
+
+/* ---------- effects ---------- */
+
+:root[data-glow='off'] {
+  --shadow-brand: none;
+  --brand-glow: transparent;
+  --shadow-panel: 0 12px 28px -20px rgba(0, 0, 0, 0.8);
+}
+
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 1ms !important;
+  transition-duration: 1ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

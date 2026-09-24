@@ -1,0 +1,295 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Shell from './features/shell/Shell.jsx';
+import UpdateCenter from './features/updater/UpdateCenter.jsx';
+import useUpdater from './features/updater/useUpdater.js';
+import useNetwork from './features/network/useNetwork.js';
+import OnboardingFlow from './features/onboarding/OnboardingFlow.jsx';
+import AccountSwitcherModal from './features/auth/AccountSwitcherModal.jsx';
+import { setApplicationLocale } from './i18n/I18nProvider.jsx';
+
+const GUEST = { id: 'guest', name: 'Guest', uuid: null, type: 'guest', isMicrosoft: false };
+
+export default function App() {
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [startup, setStartup] = useState({ ready: false, onboarding: false, settings: null });
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [wardrobe, setWardrobe] = useState(null);
+  const autoShownVersion = useRef(null);
+  const updater = useUpdater();
+  const network = useNetwork();
+
+  const activeAccount = accounts.find(a => a.id === activeId) ?? (accounts.length > 0 ? accounts[0] : null);
+  // Cosmetics decorate the account; they must never overwrite its identity
+  // (`active.skinId` is a skin id, not an account id).
+  const cosmetics = (activeAccount && wardrobe && wardrobe.accountId === activeAccount.id) ? wardrobe.active : null;
+  const account = useMemo(() => {
+    if (!activeAccount) return GUEST;
+    return {
+      ...activeAccount,
+      ...cosmetics,
+      id: activeAccount.id,
+      isMicrosoft: activeAccount.type === 'microsoft'
+    };
+  }, [activeAccount, cosmetics]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!activeAccount || !window.native?.wardrobe?.get) {
+      setWardrobe(null);
+      return undefined;
+    }
+    window.native.wardrobe.get(activeAccount).then((value) => {
+      if (!cancelled) setWardrobe({ ...value, accountId: activeAccount.id });
+    }).catch(() => { if (!cancelled) setWardrobe(null); });
+    return () => { cancelled = true; };
+  }, [activeAccount?.id]);
+
+  useEffect(() => {
+    window.native?.onMaximizedChange(setIsMaximized);
+
+    const loadStartup = async () => {
+      if (window.native) {
+        const [accountData, settings, instanceData] = await Promise.all([
+          window.native.accounts?.list(),
+          window.native.settings?.load(),
+          window.native.instances?.load()
+        ]);
+
+        const accs = accountData?.accounts ?? [];
+        let actId = accountData?.activeId ?? null;
+        if (accs.length > 0 && (!actId || !accs.some(a => a.id === actId))) {
+          actId = accs[0].id;
+          window.native?.accounts?.setActive?.(actId).catch(() => {});
+        }
+        setAccounts(accs);
+        setActiveId(actId);
+
+        const initialAccount = accs.find(a => a.id === actId) ?? null;
+        if (initialAccount && window.native.wardrobe?.get) {
+          try {
+            const initialWardrobe = await window.native.wardrobe.get(initialAccount);
+            if (initialWardrobe) {
+              setWardrobe({ ...initialWardrobe, accountId: initialAccount.id });
+            }
+          } catch (e) {
+            console.warn('Could not load initial wardrobe:', e);
+          }
+        }
+
+        const completion = settings?.onboarding?.completed;
+        const hasExistingData = Boolean(
+          accountData?.accounts?.length || instanceData?.instances?.length
+        );
+        const onboarding = completion === true ? false : completion === false ? true : !hasExistingData;
+        setApplicationLocale(settings?.onboarding?.language || 'en');
+
+        // Transparently mark pre-onboarding installs as complete.
+        let migratedSettings = settings;
+        if (completion == null && hasExistingData) {
+          migratedSettings = {
+            ...settings,
+            onboarding: { language: settings?.onboarding?.language || 'en', completed: true }
+          };
+          await window.native.settings?.save(migratedSettings);
+        }
+
+        setStartup({ ready: true, onboarding, settings: migratedSettings, instances: instanceData });
+
+        // Background sync so any remote cloud updates are pulled seamlessly
+        if (initialAccount && window.native.wardrobe?.sync) {
+          window.native.wardrobe.sync(initialAccount).then((res) => {
+            if (res?.pulled && res?.state) {
+              setWardrobe({ ...res.state, accountId: initialAccount.id });
+            } else if (res?.ok) {
+              window.native.wardrobe.get(initialAccount).then((w) => {
+                if (w) setWardrobe({ ...w, accountId: initialAccount.id });
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+        return;
+      }
+
+      const savedAccounts = [];
+      const rawSettings = localStorage.getItem('noctra.settings') || localStorage.getItem('native.settings');
+      const rawInstances = localStorage.getItem('noctra.instances') || localStorage.getItem('native.instances');
+      let settings = rawSettings ? JSON.parse(rawSettings) : {};
+      if (!settings.appearance || settings.appearance.theme !== 'black') {
+        settings = { ...settings, appearance: { ...(settings.appearance || {}), theme: 'black' } };
+        try {
+          localStorage.setItem('noctra.settings', JSON.stringify(settings));
+          localStorage.setItem('native.settings', JSON.stringify(settings));
+        } catch {}
+      }
+      const instanceData = rawInstances ? JSON.parse(rawInstances) : null;
+      const completion = settings?.onboarding?.completed;
+      const hasExistingData = Boolean(instanceData?.instances?.length);
+      const onboarding = completion === true ? false : completion === false ? true : !hasExistingData;
+      setApplicationLocale(settings?.onboarding?.language || 'en');
+
+      setAccounts(savedAccounts);
+      setStartup({ ready: true, onboarding, settings, instances: instanceData });
+    };
+
+    loadStartup().catch((error) => {
+      console.error('Could not load startup state:', error);
+      setStartup({ ready: true, onboarding: true, settings: {}, instances: null });
+    });
+  }, []);
+
+  useEffect(() => {
+    const { type, version } = updater.status;
+    if (type === 'available' && version && autoShownVersion.current !== version) {
+      autoShownVersion.current = version;
+      setUpdateOpen(true);
+    }
+    if (type === 'downloaded') setUpdateOpen(true);
+  }, [updater.status]);
+
+  const refreshAccounts = async () => {
+    const res = await window.native?.accounts?.list();
+    if (res) {
+      const accs = res.accounts ?? [];
+      let actId = res.activeId ?? null;
+      if (accs.length > 0 && (!actId || !accs.some(a => a.id === actId))) {
+        actId = accs[0].id;
+        window.native?.accounts?.setActive?.(actId).catch(() => {});
+      }
+      setAccounts(accs);
+      setActiveId(actId);
+    }
+  };
+
+  const handleAddMicrosoft = async () => {
+    const res = await window.native?.accounts?.addMicrosoft();
+    if (res?.ok) await refreshAccounts();
+    return res;
+  };
+
+  const handleAddOffline = async (name) => {
+    const res = await window.native?.accounts?.addOffline(name);
+    if (res?.ok) {
+      setAccounts(prev => [...prev, res.account]);
+      if (!activeId) setActiveId(res.account.id);
+    }
+    return res;
+  };
+
+  const handleAddNoctra = async (payload) => {
+    const bridge = window.noctra || window.native;
+    const res = await bridge?.accounts?.addNoctra?.(payload)
+      || await bridge?.accounts?.addNative?.(payload)
+      || await bridge?.accounts?.addOffline?.(typeof payload === 'string' ? payload : payload?.name);
+    if (res?.ok) {
+      await refreshAccounts();
+      if (res.account?.id) setActiveId(res.account.id);
+    }
+    return res;
+  };
+
+  const handleAddNative = handleAddNoctra;
+
+  const handleNoctraSendCode = async (payload) => {
+    return await window.native?.accounts?.noctraSendCode?.(payload);
+  };
+
+  const handleNoctraResendCode = async (payload) => {
+    return await window.native?.accounts?.noctraResendCode?.(payload);
+  };
+
+  const handleNoctraVerifyRegister = async (payload) => {
+    const res = await window.native?.accounts?.noctraVerifyRegister?.(payload);
+    if (res?.ok) {
+      await refreshAccounts();
+      if (res.account?.id) setActiveId(res.account.id);
+    }
+    return res;
+  };
+
+  const handleNoctraLogin = async (payload) => {
+    const res = await window.native?.accounts?.noctraLogin?.(payload);
+    if (res?.ok) {
+      await refreshAccounts();
+      if (res.account?.id) setActiveId(res.account.id);
+    }
+    return res;
+  };
+
+  const handleSwitchAccount = async (id) => {
+    await window.native?.accounts?.setActive(id);
+    setActiveId(id);
+    const target = accounts.find(a => a.id === id);
+    if (target && window.native?.wardrobe?.get) {
+      try {
+        const w = await window.native.wardrobe.get(target);
+        if (w) setWardrobe({ ...w, accountId: id });
+      } catch {}
+    }
+  };
+
+  const handleRemoveAccount = async (id) => {
+    await window.native?.accounts?.remove(id);
+    await refreshAccounts();
+  };
+
+  const handleOnboardingComplete = async ({ language, instance }) => {
+    const instanceData = { instances: [instance], selectedId: instance.id };
+    const nextSettings = {
+      ...(startup.settings ?? {}),
+      onboarding: { completed: true, language }
+    };
+
+    // Save the instance first. The completion marker is written last so a
+    // failed write never strands the user outside setup without an instance.
+    if (window.native) {
+      await window.native.instances.save(instanceData);
+      const savedSettings = await window.native.settings.save(nextSettings);
+      setStartup({ ready: true, onboarding: false, settings: savedSettings ?? nextSettings, instances: instanceData });
+    } else {
+      localStorage.setItem('noctra.instances', JSON.stringify(instanceData));
+      localStorage.setItem('noctra.settings', JSON.stringify(nextSettings));
+      setStartup({ ready: true, onboarding: false, settings: nextSettings, instances: instanceData });
+    }
+  };
+
+  if (!startup.ready) {
+    return <div className="window-frame" aria-label="Loading Noctra Client" />;
+  }
+
+  return (
+    <div className={`window-frame${isMaximized ? ' maximized' : ''}`}>
+      <UpdateCenter
+        open={updateOpen}
+        onClose={() => setUpdateOpen(false)}
+        status={updater.status}
+        onCheck={updater.check}
+        onDownload={updater.download}
+        onCancel={updater.cancel}
+        onInstall={updater.install}
+      />
+      <Shell
+        isMaximized={isMaximized}
+        account={account}
+        accounts={accounts}
+        activeId={activeId}
+        initialInstances={startup.instances}
+        onAddMicrosoft={handleAddMicrosoft}
+        onAddOffline={handleAddOffline}
+        onAddNoctra={handleAddNoctra}
+        onAddNative={handleAddNative}
+        onNoctraSendCode={handleNoctraSendCode}
+        onNoctraResendCode={handleNoctraResendCode}
+        onNoctraVerifyRegister={handleNoctraVerifyRegister}
+        onNoctraLogin={handleNoctraLogin}
+        onSwitchAccount={handleSwitchAccount}
+        onRemoveAccount={handleRemoveAccount}
+        onWardrobeChanged={(value) => setWardrobe({ ...value, accountId: activeAccount?.id })}
+        updateStatus={updater.status}
+        networkStatus={network.status}
+        onOpenUpdater={() => setUpdateOpen(true)}
+      />
+    </div>
+  );
+}

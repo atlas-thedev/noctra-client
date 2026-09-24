@@ -1,0 +1,657 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import NativeIcon from "../../components/ui/NativeIcon.jsx";
+import { ART_ASSETS, RELEASE_LINES, getClusterArt } from "../../data/versionsData.js";
+import { bannerFor, getVersionBanners } from "../../lib/patchNotes.js";
+import {
+  LOADERS,
+  compareVersions,
+  getFabricGameVersions,
+  getVersionManifest,
+  isReleaseId,
+  loaderAvailability,
+  versionLine
+} from "../../lib/mojang.js";
+import { useI18n } from "../../i18n/I18nProvider.jsx";
+import InstancePickerModal from "./InstancePickerModal.jsx";
+import vanillaIcon from "../../assets/icons/vanilla.png";
+import fabricIcon from "../../assets/icons/fabric.png";
+import forgeIcon from "../../assets/icons/forge.jpg";
+import "./ClustersView.css";
+
+const SNAPSHOT_LINE = "snapshots";
+
+/**
+ * Canonical Major Releases in order, with 26.2 and 26.1 leading at the top:
+ * Row 1: 26.2 | 26.1 | 1.21
+ * Row 2: 1.20 | 1.19 | 1.18
+ * Row 3: 1.17 | 1.16 | 1.15
+ * Row 4: 1.14 | 1.13 | 1.12
+ * Row 5: 1.11 | 1.10 | 1.9
+ * Row 6: 1.8  | 1.7
+ */
+const FEATURED_ORDER = [
+  "26.2",
+  "26.1",
+  "1.21",
+  "1.20",
+  "1.19",
+  "1.18",
+  "1.17",
+  "1.16",
+  "1.15",
+  "1.14",
+  "1.13",
+  "1.12",
+  "1.11",
+  "1.10",
+  "1.9",
+  "1.8",
+  "1.7"
+];
+
+/** Default patches per card matching canonical releases */
+const CANONICAL_PATCHES = {
+  "26.2": "26.2",
+  "26.1": "26.1.1",
+  "1.21": "1.21.7",
+  "1.20": "1.20.4",
+  "1.19": "1.19.1",
+  "1.18": "1.18.2",
+  "1.17": "1.17.1",
+  "1.16": "1.16.5",
+  "1.15": "1.15.2",
+  "1.14": "1.14.4",
+  "1.13": "1.13.1",
+  "1.12": "1.12.2",
+  "1.11": "1.11.2",
+  "1.10": "1.10.2",
+  "1.9": "1.9.4",
+  "1.8": "1.8.9",
+  "1.7": "1.7.10"
+};
+
+function getLoaderIcon(loader) {
+  if (loader === "Forge") return forgeIcon;
+  if (loader === "Vanilla") return vanillaIcon;
+  return fabricIcon;
+}
+
+/** Robust artwork renderer that handles cached & bundled artwork with graceful fallback. */
+function Art({ src, className = "" }) {
+  const [state, setState] = useState({ url: src, ready: false });
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    setState({ url: src, ready: false });
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      setState({ url: src, ready: true });
+    }
+  }, [src]);
+
+  const handleRef = (node) => {
+    imgRef.current = node;
+    if (node?.complete && node?.naturalWidth > 0) {
+      setState((prev) => (prev.ready ? prev : { ...prev, ready: true }));
+    }
+  };
+
+  return (
+    <img
+      ref={handleRef}
+      className={className + (state.ready ? " is-ready" : "")}
+      src={state.url}
+      alt=""
+      draggable={false}
+      loading="eager"
+      decoding="async"
+      onLoad={() => setState((prev) => ({ ...prev, ready: true }))}
+      onError={() =>
+        setState((prev) =>
+          prev.url === ART_ASSETS.default
+            ? { ...prev, ready: true }
+            : { url: ART_ASSETS.default, ready: false }
+        )
+      }
+    />
+  );
+}
+
+export default function ClustersView({
+  instances = [],
+  selectedCluster,
+  onSelectCluster,
+  onOpenCluster,
+  onLaunch,
+  onKill,
+  onOpenNewInstanceModal,
+  onCreateInstance,
+  onNotify,
+  launcherState
+}) {
+  const { t } = useI18n();
+  const [manifest, setManifest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fabricSet, setFabricSet] = useState(null);
+  const [banners, setBanners] = useState(null);
+
+  // Selected card defaults to 1.21 to match reference mockup c65d
+  const [selectedLine, setSelectedLine] = useState("1.21");
+  const [selectedPatches, setSelectedPatches] = useState({});
+  const [selectedLoaders, setSelectedLoaders] = useState({});
+  const [openDropdownLine, setOpenDropdownLine] = useState(null);
+  const [includeSnapshots, setIncludeSnapshots] = useState(false);
+  const [creatingLineId, setCreatingLineId] = useState(null);
+  const [instancePicker, setInstancePicker] = useState({
+    open: false,
+    mode: "launch",
+    line: null,
+    patch: "",
+    loader: "",
+    matches: []
+  });
+
+  // Close patch dropdown on click outside
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (!e.target.closest(".version-patch-dropdown-container")) {
+        setOpenDropdownLine(null);
+      }
+    };
+    if (openDropdownLine) {
+      document.addEventListener("pointerdown", handleOutside);
+      return () => document.removeEventListener("pointerdown", handleOutside);
+    }
+  }, [openDropdownLine]);
+
+  // Fetch manifests and artwork maps
+  useEffect(() => {
+    let cancelled = false;
+
+    getVersionManifest()
+      .then((data) => {
+        if (!cancelled) setManifest(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    getFabricGameVersions()
+      .then((set) => {
+        if (!cancelled) setFabricSet(set);
+      })
+      .catch(() => {});
+
+    getVersionBanners()
+      .then((map) => {
+        if (!cancelled) setBanners(map);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Build and sort release lines
+  const lines = useMemo(() => {
+    const versions = manifest?.versions || [];
+    const buckets = new Map();
+
+    // 1. Seed buckets with known RELEASE_LINES to ensure 26.2, 26.1, 1.21..1.7 exist
+    RELEASE_LINES.forEach((knownLine) => {
+      if (knownLine.id === SNAPSHOT_LINE && !includeSnapshots) return;
+      buckets.set(knownLine.id, {
+        id: knownLine.id,
+        versions: (knownLine.versions || []).map((v) => ({ id: v.version, type: "release" })),
+        newest: "2026-01-01T00:00:00Z",
+        known: knownLine
+      });
+    });
+
+    // 2. Ingest versions from Mojang manifest
+    versions.forEach((version) => {
+      const release = isReleaseId(version.id);
+      if (!release && !includeSnapshots) return;
+
+      const key = release ? versionLine(version.id) : SNAPSHOT_LINE;
+      if (!key) return;
+
+      if (!buckets.has(key)) {
+        buckets.set(key, { id: key, versions: [], newest: version.releaseTime, known: null });
+      }
+      const bucket = buckets.get(key);
+      if (!bucket.versions.some((item) => item.id === version.id)) {
+        bucket.versions.push(version);
+      }
+      if (version.releaseTime && (!bucket.newest || version.releaseTime > bucket.newest)) {
+        bucket.newest = version.releaseTime;
+      }
+    });
+
+    const list = Array.from(buckets.values());
+
+    // 3. Sort: canonical featured order first (0..n), then newer/other versions, then snapshots
+    list.sort((a, b) => {
+      if (a.id === SNAPSHOT_LINE) return 1;
+      if (b.id === SNAPSHOT_LINE) return -1;
+
+      const aFeaturedIdx = FEATURED_ORDER.indexOf(a.id);
+      const bFeaturedIdx = FEATURED_ORDER.indexOf(b.id);
+
+      if (aFeaturedIdx !== -1 && bFeaturedIdx !== -1) {
+        return aFeaturedIdx - bFeaturedIdx;
+      }
+      if (aFeaturedIdx !== -1) return -1;
+      if (bFeaturedIdx !== -1) return 1;
+
+      // Fallback semver descending comparison
+      const cmp = compareVersions(b.id, a.id);
+      if (cmp !== 0) return cmp;
+
+      return String(b.newest || "").localeCompare(String(a.newest || ""));
+    });
+
+    return list.map((bucket) => {
+      const known = bucket.known || RELEASE_LINES.find((r) => r.id === bucket.id);
+      const ids = bucket.versions.map((v) => v.id);
+      const banner = bannerFor(banners, ids[0], ids);
+      const highResArt = known?.art || getClusterArt({ version: bucket.id, mc_version: ids[0] });
+
+      return {
+        ...bucket,
+        name: known?.name || "Minecraft " + bucket.id,
+        art: highResArt || banner?.image || ART_ASSETS.default,
+        tags: known?.tags || [bucket.id === SNAPSHOT_LINE ? "Snapshot" : "Release"],
+        description: known?.description || banner?.shortText || "Minecraft release " + bucket.id
+      };
+    });
+  }, [manifest, includeSnapshots, banners]);
+
+  // Patch resolution per line
+  const getPatchForLine = (lineId, lineVersions = []) => {
+    if (selectedPatches[lineId]) return selectedPatches[lineId];
+    if (CANONICAL_PATCHES[lineId]) {
+      const found = lineVersions.find((v) => v.id === CANONICAL_PATCHES[lineId]);
+      if (found) return found.id;
+      return CANONICAL_PATCHES[lineId];
+    }
+    return lineVersions[0]?.id || lineId;
+  };
+
+  // Loader resolution per line
+  const getLoaderForLine = (lineId) => {
+    if (selectedLoaders[lineId]) return selectedLoaders[lineId];
+    if (["1.7", "1.8", "1.9", "1.10", "1.11", "1.12"].includes(lineId)) return "Forge";
+    if (lineId === "1.13") return "Vanilla";
+    return "Fabric";
+  };
+
+  // Find all matching instances from instances array
+  const findMatchingInstances = (patch, loader) => {
+    return instances.filter(
+      (inst) =>
+        (inst.version === patch || inst.mc_version === patch) &&
+        (inst.loader || "Vanilla").toLowerCase() === loader.toLowerCase()
+    );
+  };
+
+  // Find matching instance from instances array (first match)
+  const findMatchingInstance = (patch, loader) => {
+    return findMatchingInstances(patch, loader)[0] || null;
+  };
+
+  // Cycle loader on icon click
+  const handleCycleLoader = (e, lineId, patch) => {
+    e.stopPropagation();
+    const current = getLoaderForLine(lineId);
+    const available = LOADERS.filter(
+      (l) => loaderAvailability(l, patch, fabricSet)?.available !== false
+    );
+    const idx = available.indexOf(current);
+    const next = available[(idx + 1) % available.length] || "Fabric";
+    setSelectedLoaders((prev) => ({ ...prev, [lineId]: next }));
+  };
+
+  // Select patch from dropdown
+  const handleSelectPatch = (lineId, patch) => {
+    setSelectedPatches((prev) => ({ ...prev, [lineId]: patch }));
+    setSelectedLine(lineId);
+    setOpenDropdownLine(null);
+  };
+
+  // Launch button handler
+  const handleLaunchClick = async (e, line) => {
+    e.stopPropagation();
+    setSelectedLine(line.id);
+    const patch = getPatchForLine(line.id, line.versions);
+    const loader = getLoaderForLine(line.id);
+    const matches = findMatchingInstances(patch, loader);
+    const matching = matches[0] || null;
+
+    const isBusy =
+      Boolean(launcherState?.busy) &&
+      (matches.some((m) => m.id === launcherState?.instanceId) ||
+        launcherState?.instance?.version === patch);
+
+    if (isBusy) {
+      onKill?.();
+      return;
+    }
+
+    if (matches.length > 1) {
+      setInstancePicker({
+        open: true,
+        mode: "launch",
+        line,
+        patch,
+        loader,
+        matches
+      });
+      return;
+    }
+
+    if (matching) {
+      onSelectCluster?.(matching.id);
+      onLaunch?.(matching);
+      return;
+    }
+
+    if (!onCreateInstance) return;
+
+    const payload = {
+      name: (line.name || patch) + " " + loader,
+      version: patch,
+      loader,
+      description: line.description || "",
+      tags: line.tags || [],
+      art: getClusterArt({ version: patch, mc_version: patch }) || line.art
+    };
+
+    setCreatingLineId(line.id);
+    try {
+      const created = await onCreateInstance(payload);
+      if (created?.id) {
+        onSelectCluster?.(created.id);
+        onLaunch?.(created);
+      }
+    } finally {
+      setCreatingLineId(null);
+    }
+  };
+
+  // Settings gear handler
+  const handleOpenSettings = async (e, line) => {
+    e.stopPropagation();
+    setSelectedLine(line.id);
+    const patch = getPatchForLine(line.id, line.versions);
+    const loader = getLoaderForLine(line.id);
+    const matches = findMatchingInstances(patch, loader);
+    const matching = matches[0] || null;
+
+    if (matches.length > 1) {
+      setInstancePicker({
+        open: true,
+        mode: "settings",
+        line,
+        patch,
+        loader,
+        matches
+      });
+      return;
+    }
+
+    if (matching) {
+      onSelectCluster?.(matching.id);
+      onOpenCluster?.(matching, "overview");
+      return;
+    }
+
+    if (!onCreateInstance) return;
+
+    const payload = {
+      name: (line.name || patch) + " " + loader,
+      version: patch,
+      loader,
+      description: line.description || "",
+      tags: line.tags || [],
+      art: getClusterArt({ version: patch, mc_version: patch }) || line.art
+    };
+
+    setCreatingLineId(line.id);
+    try {
+      const created = await onCreateInstance(payload);
+      if (created?.id) onSelectCluster?.(created.id);
+    } finally {
+      setCreatingLineId(null);
+    }
+  };
+
+  // Instance picker callbacks
+  const handlePickerSelect = (inst) => {
+    setInstancePicker((prev) => ({ ...prev, open: false }));
+    onSelectCluster?.(inst.id);
+    if (instancePicker.mode === "settings") {
+      onOpenCluster?.(inst, "overview");
+    } else {
+      onLaunch?.(inst);
+    }
+  };
+
+  const handlePickerCreateNew = async () => {
+    const { line, patch, loader, mode, matches } = instancePicker;
+    setInstancePicker((prev) => ({ ...prev, open: false }));
+    if (!line || !onCreateInstance) return;
+
+    const payload = {
+      name: `${line.name || patch} ${loader} (${matches.length + 1})`,
+      version: patch,
+      loader,
+      description: line.description || "",
+      tags: line.tags || [],
+      art: getClusterArt({ version: patch, mc_version: patch }) || line.art
+    };
+
+    setCreatingLineId(line.id);
+    try {
+      const created = await onCreateInstance(payload);
+      if (created?.id) {
+        onSelectCluster?.(created.id);
+        if (mode !== "settings") {
+          onLaunch?.(created);
+        }
+      }
+    } finally {
+      setCreatingLineId(null);
+    }
+  };
+
+  return (
+    <div className="clusters-view">
+      <header className="clusters-header">
+        <h1 className="clusters-title">CHANGE VERSION</h1>
+
+        <div className="clusters-header-actions">
+          <button
+            type="button"
+            className={"clusters-chip " + (includeSnapshots ? "active" : "")}
+            onClick={() => setIncludeSnapshots((v) => !v)}
+            title="Toggle snapshot builds"
+          >
+            <NativeIcon name="sparkles" size={13} />
+            <span>{t("versions.snapshots")}</span>
+          </button>
+
+          <button
+            type="button"
+            className="clusters-new-btn"
+            onClick={onOpenNewInstanceModal}
+            title="Create custom instance"
+          >
+            <NativeIcon name="plus" size={14} />
+            <span>{t("instances.new")}</span>
+          </button>
+        </div>
+      </header>
+
+      {loading && !lines.length ? (
+        <div className="clusters-loading">
+          <NativeIcon name="refresh" size={24} className="is-spinning" />
+          <span>{t("versions.fetching")}</span>
+        </div>
+      ) : (
+        <div className="clusters-grid-container">
+          <div className="clusters-cards-grid">
+            {lines.map((line) => {
+              const isSelected = line.id === selectedLine;
+              const patch = getPatchForLine(line.id, line.versions);
+              const loader = getLoaderForLine(line.id);
+              const matches = findMatchingInstances(patch, loader);
+              const matching = matches[0] || null;
+              const hasMultiple = matches.length > 1;
+              const loaderIcon = getLoaderIcon(loader);
+              const isDropdownOpen = openDropdownLine === line.id;
+              const cardArt =
+                getClusterArt({ version: patch, mc_version: patch }) || line.art || ART_ASSETS.default;
+
+              const isBusyThisVersion =
+                (Boolean(launcherState?.busy) &&
+                  (matches.some((m) => m.id === launcherState?.instanceId) ||
+                    launcherState?.instance?.version === patch)) ||
+                creatingLineId === line.id;
+
+              return (
+                <div
+                  key={line.id}
+                  className={"version-card" + (isSelected ? " is-selected" : "")}
+                  onClick={() => setSelectedLine(line.id)}
+                >
+                  {/* Background Artwork */}
+                  <div className="version-card-art-wrap">
+                    <Art src={cardArt} className="version-card-art" />
+                    <div className="version-card-scrim" />
+                  </div>
+
+                  {/* Top-Left Patch Dropdown Pill */}
+                  <div
+                    className="version-patch-dropdown-container"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      className={"version-patch-chip" + (isDropdownOpen ? " is-open" : "")}
+                      onClick={() =>
+                        setOpenDropdownLine((prev) => (prev === line.id ? null : line.id))
+                      }
+                      title="Select patch version"
+                    >
+                      <span>{patch}</span>
+                      <NativeIcon
+                        name={isDropdownOpen ? "chevron-up" : "chevron-down"}
+                        size={10}
+                        className="version-patch-chevron"
+                      />
+                    </button>
+
+                    {isDropdownOpen && (
+                      <div className="version-patch-menu">
+                        {line.versions.map((v) => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            className={
+                              "version-patch-item" + (v.id === patch ? " is-active" : "")
+                            }
+                            onClick={() => handleSelectPatch(line.id, v.id)}
+                          >
+                            <span>{v.id}</span>
+                            {v.id === patch && <NativeIcon name="check" size={11} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Centered Big Version Number */}
+                  <div
+                    className={
+                      "version-card-center-numeral" +
+                      (String(line.id).length > 4 ? " is-long" : "")
+                    }
+                  >
+                    <span>{line.id}</span>
+                  </div>
+
+                  {/* Bottom Action Footer */}
+                  <div className="version-card-footer">
+                    <div className="version-footer-left">
+                      <button
+                        type="button"
+                        className="version-loader-btn"
+                        onClick={(e) => handleCycleLoader(e, line.id, patch)}
+                        title={"Modloader: " + loader + " (Click to switch)"}
+                      >
+                        <img src={loaderIcon} alt={loader} className="version-loader-img" />
+                      </button>
+                    </div>
+
+                    <div className="version-footer-right">
+                      <button
+                        type="button"
+                        className="version-gear-btn"
+                        onClick={(e) => handleOpenSettings(e, line)}
+                        title={
+                          hasMultiple
+                            ? `Configure instance (${matches.length} available)`
+                            : "Manage mods & instance settings"
+                        }
+                      >
+                        <NativeIcon name="settings" size={13} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className={
+                          "version-launch-btn" +
+                          (isBusyThisVersion ? " is-busy" : "") +
+                          (isSelected ? " is-active-launch" : "")
+                        }
+                        onClick={(e) => handleLaunchClick(e, line)}
+                        disabled={isBusyThisVersion}
+                        title={
+                          hasMultiple
+                            ? `Choose instance to launch (${matches.length} available)`
+                            : matching
+                            ? "Launch " + matching.name
+                            : "Install & Launch " + patch
+                        }
+                      >
+                        {isBusyThisVersion && (
+                          <span className="version-launch-icon">
+                            <NativeIcon name="refresh" size={12} className="is-spinning" />
+                          </span>
+                        )}
+                        <span>{isBusyThisVersion ? "LAUNCHING" : hasMultiple ? `LAUNCH (${matches.length})` : "LAUNCH"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <InstancePickerModal
+        open={instancePicker.open}
+        mode={instancePicker.mode}
+        version={instancePicker.patch}
+        loader={instancePicker.loader}
+        instances={instancePicker.matches}
+        onClose={() => setInstancePicker((prev) => ({ ...prev, open: false }))}
+        onSelect={handlePickerSelect}
+        onCreateNew={handlePickerCreateNew}
+      />
+    </div>
+  );
+}
