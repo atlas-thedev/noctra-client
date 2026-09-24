@@ -384,13 +384,13 @@
 }
 
 .im-nav-settings.active {
-  color: #ffffff;
-  background: var(--brand-subtle);
+  color: #000000;
+  background: #ffffff;
 }
 
 .im-nav-settings.active svg {
-  color: #ffffff !important;
-  stroke: #ffffff;
+  color: #000000 !important;
+  stroke: #000000;
 }
 
 /* ============================================================

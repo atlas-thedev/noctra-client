@@ -761,9 +761,9 @@
 }
 
 .instance-add-card:hover {
-  border-color: var(--brand-border);
-  background: var(--brand-subtle);
-  color: var(--fg-primary-hover);
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #000000;
   transform: translateY(-2px);
 }
 

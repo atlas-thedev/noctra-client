@@ -266,8 +266,8 @@ export default function ClusterDetailView({
             {contentTabs.map(([id, title, Glyph]) => (
               <button
                 key={id}
-                className={`im-nav ${tab === id && !browser ? 'active' : ''} im-nav-${id}`}
-                aria-current={tab === id && !browser ? 'page' : undefined}
+                className={`im-nav ${tab === id ? 'active' : ''} im-nav-${id}`}
+                aria-current={tab === id ? 'page' : undefined}
                 onClick={() => switchTab(id)}
               >
                 <Glyph size={16} className="im-nav-icon" />
@@ -279,8 +279,8 @@ export default function ClusterDetailView({
           {/* Sidebar Footer: Advanced */}
           <div className="im-sidebar-footer">
             <button
-              className={`im-nav im-nav-settings ${tab === 'settings' && !browser ? 'active' : ''}`}
-              aria-current={tab === 'settings' && !browser ? 'page' : undefined}
+              className={`im-nav im-nav-settings ${tab === 'settings' ? 'active' : ''}`}
+              aria-current={tab === 'settings' ? 'page' : undefined}
               onClick={() => switchTab('settings')}
             >
               <Settings2 size={16} className="im-nav-icon" />
