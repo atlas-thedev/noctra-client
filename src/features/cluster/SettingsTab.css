@@ -32,6 +32,7 @@
 /* ---- caution / scope banner ---- */
 
 .nis-banner {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,6 +83,7 @@
 /* ---- summary chips ---- */
 
 .nis-summary {
+  flex: none;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
@@ -138,6 +140,7 @@
 /* ---- section cards ---- */
 
 .nis-card {
+  flex: none;
   border-radius: var(--radius-lg);
   border: 1px solid var(--component-border);
   background: var(--component-bg);
@@ -659,6 +662,7 @@
 
 .nis-empty,
 .nis-loading {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -776,4 +780,27 @@
   .nis-summary {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================
+   Sidebar active-tab fix (compensates for a specificity clash
+   in InstanceManager.css). The generic button reset
+   `.instance-manager button:not([class*="browse-"]):not(.btn)`
+   (0,3,1) outweighs `.im-nav.active` (0,2,0), so the intended
+   white active pill never applied and left black text on a dark
+   pill. These higher-specificity rules (scoped to .im-sidebar,
+   incl. :hover) restore it. Ideally lives in InstanceManager.css.
+   ============================================================ */
+
+.instance-manager .im-sidebar button.im-nav.active,
+.instance-manager .im-sidebar button.im-nav.active:hover,
+.instance-manager .im-sidebar button.im-nav-settings.active,
+.instance-manager .im-sidebar button.im-nav-settings.active:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+.instance-manager .im-sidebar button.im-nav.active .im-nav-text,
+.instance-manager .im-sidebar button.im-nav-settings.active .im-nav-text {
+  color: #000000;
 }
