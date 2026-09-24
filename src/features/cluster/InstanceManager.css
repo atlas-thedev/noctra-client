@@ -77,7 +77,7 @@
   font-size: inherit;
 }
 
-.instance-manager button {
+.instance-manager button:not([class*="browse-"]):not(.btn) {
   cursor: pointer;
   border: 0;
   background: none;
@@ -85,11 +85,11 @@
   transition: all 0.15s var(--ease);
 }
 
-.instance-manager button:hover {
+.instance-manager button:not([class*="browse-"]):not(.btn):hover {
   color: var(--fg-primary);
 }
 
-.instance-manager button:disabled {
+.instance-manager button:not([class*="browse-"]):not(.btn):disabled {
   cursor: default;
   opacity: 0.45;
 }
