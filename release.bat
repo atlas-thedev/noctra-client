@@ -6,7 +6,7 @@ title Noctra Client - Release
 REM ------------------------------------------------------------------
 REM  One click release:
 REM    bump version -> commit -> tag -> push
-REM  GitHub Actions then builds Windows, macOS and Linux and publishes
+REM  GitHub Actions then builds Windows and Linux (macOS is coming soon) and publishes
 REM  the GitHub Release automatically.
 REM
 REM  Usage:  release.bat            (asks what to bump)
@@ -112,7 +112,7 @@ echo.
 echo [4/6] Ready to release
 echo   Version : !CUR!  -^>  !NEWVER!
 echo   Tag     : !TAG!
-echo   Platforms: Windows, macOS, Linux
+echo   Platforms: Windows, Linux (macOS coming soon)
 echo.
 echo Uncommitted changes that will be included:
 git status --short

@@ -1,6 +1,7 @@
 name: Release
 
-# Builds Windows, macOS and Linux installers and publishes them as a GitHub Release.
+# Builds Windows and Linux installers and publishes them as a GitHub Release.
+# macOS is paused (no runner available) - see the commented entry in the build matrix.
 #
 # Trigger it by pushing a version tag (release.bat does this for you):
 #   git tag v3.10.1 && git push origin v3.10.1
@@ -72,9 +73,11 @@ jobs:
           - name: Windows
             os: windows-latest
             flag: --win
-          - name: macOS
-            os: macos-latest
-            flag: --mac
+          # macOS is coming soon. To re-enable, uncomment this entry and the
+          # latest-mac.yml / .dmg checks in the publish job below.
+          # - name: macOS
+          #   os: macos-latest
+          #   flag: --mac
           - name: Linux
             os: ubuntu-latest
             flag: --linux
@@ -110,11 +113,10 @@ jobs:
           NAMES=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
           echo "$NAMES"
           missing=0
-          for f in latest.yml latest-mac.yml latest-linux.yml; do
+          for f in latest.yml latest-linux.yml; do
             if ! grep -qx "$f" <<<"$NAMES"; then echo "::error::Missing $f"; missing=1; fi
           done
           grep -qE '\.exe$' <<<"$NAMES"      || { echo "::error::No Windows installer (.exe)"; missing=1; }
-          grep -qE '\.dmg$' <<<"$NAMES"      || { echo "::error::No macOS disk image (.dmg)"; missing=1; }
           grep -qE '\.AppImage$' <<<"$NAMES" || { echo "::error::No Linux AppImage"; missing=1; }
           if [[ $missing -ne 0 ]]; then
             echo "::error::Release $TAG left as a draft because some platform builds are missing."
