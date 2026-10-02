@@ -20,6 +20,8 @@ import CreateInstanceModal from '../instances/CreateInstanceModal.jsx';
 import useLauncher from '../launcher/useLauncher.js';
 import useInstances from '../instances/useInstances.js';
 import usePlaytimeTracker from '../instances/usePlaytimeTracker.js';
+import { getPreset, installPreset } from '../instances/presets.js';
+import { installImageSkeletons } from '../../lib/imageSkeleton.js';
 import CrashReportModal from '../crash/CrashReportModal.jsx';
 import useCrashReports from '../crash/useCrashReports.js';
 import NoctraAccountGate from '../../components/ui/NoctraAccountGate.jsx';
@@ -30,8 +32,18 @@ import GuidesView from '../guides/GuidesView.jsx';
 import { DownloadManagerProvider } from './DownloadManagerContext.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import './Shell.css';
+import '../../lib/whitePrimary.css';
 
 const WELCOME_TOUR_KEY = 'noctra.welcome-tour.v1';
+const PLAY_AS_KEY = 'noctra.play-as.v1';
+
+const readPlayAs = () => {
+  try {
+    return JSON.parse(localStorage.getItem(PLAY_AS_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+};
 
 const playRelayChime = () => {
   try {
@@ -100,7 +112,8 @@ export default function Shell({
   const [tourOpen, setTourOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [guideRequest, setGuideRequest] = useState(null);
-  const [createInitialVersion, setCreateInitialVersion] = useState(null);
+  const [createSeed, setCreateSeed] = useState(null);
+  const [playAsMap, setPlayAsMap] = useState(readPlayAs);
 
   const [notifications, setNotifications] = useState([]);
   const [relayActiveThreadId, setRelayActiveThreadId] = useState(null);
@@ -147,11 +160,35 @@ export default function Shell({
     };
   }, [isNoctra, account, premiumLink?.userId, premiumLink?.name, premiumLink?.uuid]);
   const hasNoctra = Boolean(socialAccount);
+  // Offline accounts get a local-only Locker (never synced to Noctra).
+  const canUseLocalLocker = Boolean(hasValidAccount && account.type === 'offline');
+
+  /* A premium account linked to Noctra can play as either identity without
+     going back to the login screen. Premium = real Microsoft session (online
+     servers); Noctra = the linked Noctra profile (offline session + Noctra skins). */
+  const canSwitchIdentity = Boolean(premiumLink && socialAccount);
+  const playAs = canSwitchIdentity && playAsMap[account.id] === 'noctra' ? 'noctra' : 'premium';
+  const launchAccount = useMemo(() => {
+    if (playAs !== 'noctra' || !socialAccount) return account;
+    return { ...socialAccount, isMicrosoft: false, type: 'noctra' };
+  }, [playAs, socialAccount, account]);
+  const switchIdentity = useCallback((mode) => {
+    if (!account?.id) return;
+    setPlayAsMap((current) => {
+      const next = { ...current, [account.id]: mode === 'noctra' ? 'noctra' : 'premium' };
+      try {
+        localStorage.setItem(PLAY_AS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, [account?.id]);
   const [connectRequest, setConnectRequest] = useState(null);
   const openConnectNoctra = useCallback((microsoftAccountId) => {
     setConnectRequest({ id: microsoftAccountId, nonce: Date.now() });
     setAccountSwitcherOpen(true);
   }, []);
+
+  useEffect(() => installImageSkeletons(), []);
 
   const instancesManager = useInstances(initialInstances);
   const launcher = useLauncher();
@@ -312,7 +349,7 @@ export default function Shell({
       setAccountSwitcherOpen(true);
       return;
     }
-    launcher.launch(cluster, account, options);
+    launcher.launch(cluster, launchAccount, options);
     notify(
       t('notify.launching'),
       options?.quickJoinServer
@@ -419,11 +456,32 @@ export default function Shell({
     if (back?.managerTab && target) handleOpenCluster(target, back.managerTab);
   };
 
+  /* Installs a preset's mods into a fresh instance, then optionally launches. */
+  const finishPresetInstall = async (instance, presetId, play) => {
+    const preset = getPreset(presetId);
+    if (preset) {
+      notify(`Installing ${preset.name}`, `Adding mods to ${instance.name}\u2026`);
+      try {
+        const result = await installPreset(instance, presetId);
+        const skipped = result.skipped.length + result.failed.length;
+        notify(
+          `${preset.name} ready`,
+          `${result.installed.length} installed${skipped ? `, ${skipped} not available for ${instance.version}` : ''}`
+        );
+      } catch (err) {
+        notify(`${preset.name} could not be installed`, err?.message || 'Unknown error');
+      }
+    }
+    if (play) handleLaunch(instance);
+  };
+
   const handleCreateInstance = (values) => {
-    const created = instancesManager.create(values);
+    const { preset, play, ...instanceValues } = values || {};
+    const created = instancesManager.create(instanceValues);
     notify(t('notify.created'), `${created.name} \u2014 ${created.version} ${created.loader}`);
     setInstanceManagerOpen(false);
     setCurrentTab('home');
+    if (preset || play) finishPresetInstall(created, preset, play);
     return created;
   };
 
@@ -470,8 +528,9 @@ export default function Shell({
     setCurrentTab('settings');
   };
 
-  const openCreateInstance = (version = null) => {
-    setCreateInitialVersion(version);
+  /* `seed` is a version string (quick search) or { name, version, loader, preset, play }. */
+  const openCreateInstance = (seed = null) => {
+    setCreateSeed(typeof seed === 'string' ? { version: seed } : seed);
     setCreateInstanceOpen(true);
   };
 
@@ -588,9 +647,9 @@ export default function Shell({
           onOpenSettings={() => handleOpenSettings('launcher')}
           onOpenAccountSwitcher={() => setAccountSwitcherOpen(true)}
           isAccountOpen={!hasValidAccount || accountSwitcherOpen}
-          account={account}
+          account={launchAccount}
           isNoctra={hasNoctra}
-          canUseLocker={canUseLocker}
+          canUseLocker={canUseLocker || canUseLocalLocker}
           notifications={notifications.length}
           onOpenNotifications={() => setNotificationsOpen(true)}
           isMaximized={isMaximized}
@@ -621,8 +680,15 @@ export default function Shell({
               onOpenCluster={handleOpenCluster}
               onOpenInstances={() => setCurrentTab('instances')}
               onOpenVersions={() => setCurrentTab('versions')}
-              onCreateInstance={() => openCreateInstance(null)}
-              account={account}
+              onCreateInstance={(seed) => openCreateInstance(seed || null)}
+              account={launchAccount}
+              identity={canSwitchIdentity ? {
+                canSwitch: true,
+                mode: playAs,
+                premiumName: account?.name,
+                noctraName: socialAccount?.name
+              } : null}
+              onSwitchIdentity={switchIdentity}
               launcherState={launcher}
               onLaunch={handleLaunch}
               onKill={launcher.kill}
@@ -630,11 +696,12 @@ export default function Shell({
           )}
 
         {currentTab === 'skins' && (
-          canUseLocker ? (
+          canUseLocker || canUseLocalLocker ? (
             <LockerView
               account={account}
               onWardrobeChanged={onWardrobeChanged}
               onNotify={notify}
+              online={networkStatus?.state === 'online'}
             />
           ) : (
             <NoctraAccountGate
@@ -812,8 +879,12 @@ export default function Shell({
       <CreateInstanceModal
         open={createInstanceOpen}
         instances={instancesManager.instances}
-        initialVersion={createInitialVersion}
-        onClose={() => { setCreateInstanceOpen(false); setCreateInitialVersion(null); }}
+        initialVersion={createSeed?.version || null}
+        initialLoader={createSeed?.loader || null}
+        initialName={createSeed?.name || null}
+        initialPreset={createSeed?.preset || null}
+        initialPlay={Boolean(createSeed?.play)}
+        onClose={() => { setCreateInstanceOpen(false); setCreateSeed(null); }}
         onCreate={(values) => handleCreateInstance(values)}
       />
 
